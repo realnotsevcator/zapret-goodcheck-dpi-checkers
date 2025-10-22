@@ -431,27 +431,51 @@ call :WriteToConsoleAndToLog Preparing TCP 16-20 DPI detection test suite...
 call :WriteToConsoleAndToLog
 
 set testCaseIndex=-1
-call :AddTcp1620Test "CF-01" "Cloudflare" "https://cdn.cookielaw.org/scripttemplates/202501.2.0/otBannerSdk.js" "1"
-call :AddTcp1620Test "CF-02" "Cloudflare" "https://genshin.jmp.blue/characters/all#" "1"
-call :AddTcp1620Test "CF-03" "Cloudflare" "https://api.frankfurter.dev/v1/2000-01-01..2002-12-31" "1"
-call :AddTcp1620Test "DO-01" "DigitalOcean" "https://genderize.io/" "1"
-call :AddTcp1620Test "HE-01" "Hetzner" "https://bible-api.com/john+1,2,3,4,5,6,7,8,9,10" "1"
-call :AddTcp1620Test "HE-02" "Hetzner" "https://tcp1620-01.dubybot.live/1MB.bin" "1"
-call :AddTcp1620Test "HE-03" "Hetzner" "https://tcp1620-02.dubybot.live/1MB.bin" "1"
-call :AddTcp1620Test "HE-04" "Hetzner" "https://tcp1620-05.dubybot.live/1MB.bin" "1"
-call :AddTcp1620Test "HE-05" "Hetzner" "https://tcp1620-06.dubybot.live/1MB.bin" "1"
-call :AddTcp1620Test "OVH-01" "OVH" "https://eu.api.ovh.com/console/rapidoc-min.js" "1"
-call :AddTcp1620Test "OVH-02" "OVH" "https://ovh.sfx.ovh/10M.bin" "1"
-call :AddTcp1620Test "OR-01" "Oracle" "https://oracle.sfx.ovh/10M.bin" "1"
-call :AddTcp1620Test "AWS-01" "AWS" "https://tms.delta.com/delta/dl_anderson/Bootstrap.js" "1"
-call :AddTcp1620Test "AWS-02" "AWS" "https://corp.kaltura.com/wp-content/cache/min/1/wp-content/themes/airfleet/dist/styles/theme.css" "1"
-call :AddTcp1620Test "FST-01" "Fastly" "https://www.juniper.net/content/dam/www/assets/images/diy/DIY_th.jpg/jcr:content/renditions/600x600.jpeg" "1"
-call :AddTcp1620Test "FST-02" "Fastly" "https://www.graco.com/etc.clientlibs/clientlib-site/resources/fonts/lato/Lato-Regular.woff2" "1"
-call :AddTcp1620Test "AKM-01" "Akamai" "https://www.lg.com/lg5-common-gp/library/jquery.min.js" "1"
-call :AddTcp1620Test "AKM-02" "Akamai" "https://media-assets.stryker.com/is/image/stryker/gateway_1?$max_width_1410$" "1"
+for %%T in (
+        "CF-01|Cloudflare|https://cdn.cookielaw.org/scripttemplates/202501.2.0/otBannerSdk.js|1"
+        "CF-02|Cloudflare|https://genshin.jmp.blue/characters/all#|1"
+        "CF-03|Cloudflare|https://api.frankfurter.dev/v1/2000-01-01..2002-12-31|1"
+        "DO-01|DigitalOcean|https://genderize.io/|1"
+        "HE-01|Hetzner|https://bible-api.com/john+1,2,3,4,5,6,7,8,9,10|1"
+        "HE-02|Hetzner|https://tcp1620-01.dubybot.live/1MB.bin|1"
+        "HE-03|Hetzner|https://tcp1620-02.dubybot.live/1MB.bin|1"
+        "HE-04|Hetzner|https://tcp1620-05.dubybot.live/1MB.bin|1"
+        "HE-05|Hetzner|https://tcp1620-06.dubybot.live/1MB.bin|1"
+        "OVH-01|OVH|https://eu.api.ovh.com/console/rapidoc-min.js|1"
+        "OVH-02|OVH|https://ovh.sfx.ovh/10M.bin|1"
+        "OR-01|Oracle|https://oracle.sfx.ovh/10M.bin|1"
+        "AWS-01|AWS|https://tms.delta.com/delta/dl_anderson/Bootstrap.js|1"
+        "AWS-02|AWS|https://corp.kaltura.com/wp-content/cache/min/1/wp-content/themes/airfleet/dist/styles/theme.css|1"
+        "FST-01|Fastly|https://www.juniper.net/content/dam/www/assets/images/diy/DIY_th.jpg/jcr:content/renditions/600x600.jpeg|1"
+        "FST-02|Fastly|https://www.graco.com/etc.clientlibs/clientlib-site/resources/fonts/lato/Lato-Regular.woff2|1"
+        "AKM-01|Akamai|https://www.lg.com/lg5-common-gp/library/jquery.min.js|1"
+        "AKM-02|Akamai|https://media-assets.stryker.com/is/image/stryker/gateway_1?$max_width_1410$|1"
+) do (
+        set "_testId="
+        set "_testProvider="
+        set "_testUrl="
+        set "_testTimes="
+        for /F "tokens=1-4 delims=|" %%A in ("%%~T") do (
+                set "_testId=%%~A"
+                set "_testProvider=%%~B"
+                set "_testUrl=%%~C"
+                set "_testTimes=%%~D"
+        )
+        if not defined _testTimes set "_testTimes=1"
+        set /A testCaseIndex+=1
+        set "testId[!testCaseIndex!]=!_testId!"
+        set "testProvider[!testCaseIndex!]=!_testProvider!"
+        set "testUrl[!testCaseIndex!]=!_testUrl!"
+        set "testTimes[!testCaseIndex!]=!_testTimes!"
+)
 
 if defined tcp1620CustomUrl (
-        call :AddTcp1620Test "!tcp1620CustomId!" "!tcp1620CustomProvider!" "!tcp1620CustomUrl!" "!tcp1620CustomTimes!"
+        if not defined tcp1620CustomTimes set "tcp1620CustomTimes=1"
+        set /A testCaseIndex+=1
+        set "testId[!testCaseIndex!]=!tcp1620CustomId!"
+        set "testProvider[!testCaseIndex!]=!tcp1620CustomProvider!"
+        set "testUrl[!testCaseIndex!]=!tcp1620CustomUrl!"
+        set "testTimes[!testCaseIndex!]=!tcp1620CustomTimes!"
 )
 
 set /A curlThreadsNum=0
@@ -770,17 +794,6 @@ if "!program!"=="!zapretName!" (
         set "strategy=!strategy:PAYLOADQUIC=%payloadQuic%!"
 )
 EndLocal && (set "%~3=%strategy%")
-exit /b
-
-:AddTcp1620Test
-set "testTimesValue=%~4"
-if not defined testTimesValue (set "testTimesValue=1")
-set /A testCaseIndex+=1
-set "testId[!testCaseIndex!]=%~1"
-set "testProvider[!testCaseIndex!]=%~2"
-set "testUrl[!testCaseIndex!]=%~3"
-set "testTimes[!testCaseIndex!]=!testTimesValue!"
-set "testTimesValue="
 exit /b
 
 :AppendUniqueQuery
