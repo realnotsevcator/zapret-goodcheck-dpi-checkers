@@ -1,0 +1,22 @@
+/First 2 uncommented lines are reserved, DO NOT REMOVE
+/You can use PAYLOADTLS and PAYLOADQUIC for automatic substitution in the script
+/
+_strategyCurlExtraKeys#-4 --http3-only
+_strategyExtraKeys#--wf-l3=ipv4 --wf-udp=443
+/
+--dpi-desync=fake
+--dpi-desync=fake --dpi-desync-repeats=2
+--dpi-desync=fake --dpi-desync-repeats=5
+--dpi-desync=fake --dpi-desync-repeats=10
+--dpi-desync=fake --dpi-desync-repeats=20
+--dpi-desync=fake --dpi-desync-fake-quic=PAYLOADQUIC
+--dpi-desync=fake --dpi-desync-repeats=2 --dpi-desync-fake-quic=PAYLOADQUIC
+--dpi-desync=fake --dpi-desync-repeats=5 --dpi-desync-fake-quic=PAYLOADQUIC
+--dpi-desync=fake --dpi-desync-repeats=10 --dpi-desync-fake-quic=PAYLOADQUIC
+--dpi-desync=fake --dpi-desync-repeats=20 --dpi-desync-fake-quic=PAYLOADQUIC
+--dpi-desync=ipfrag2 --dpi-desync-ipfrag-pos-udp=8
+--dpi-desync=ipfrag2 --dpi-desync-ipfrag-pos-udp=16
+--dpi-desync=ipfrag2 --dpi-desync-ipfrag-pos-udp=24
+--dpi-desync=ipfrag2 --dpi-desync-ipfrag-pos-udp=32
+--dpi-desync=ipfrag2 --dpi-desync-ipfrag-pos-udp=40
+--dpi-desync=ipfrag2 --dpi-desync-ipfrag-pos-udp=64

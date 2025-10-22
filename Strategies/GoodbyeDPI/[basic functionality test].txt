@@ -1,0 +1,13 @@
+/First 2 uncommented lines are reserved, DO NOT REMOVE
+/You can use FAKEHEX and FAKESNI for automatic substitution in the script
+/
+_strategyCurlExtraKeys#
+_strategyExtraKeys#-e 1 -q
+/
+/=======Generic tests=======
+--native-frag --wrong-seq
+--reverse-frag --wrong-seq
+--native-frag --wrong-seq --fake-with-sni FAKESNI
+--reverse-frag --wrong-seq --fake-with-sni FAKESNI
+--native-frag --wrong-seq --fake-from-hex FAKEHEX --fake-gen 5
+--reverse-frag --wrong-seq --fake-from-hex FAKEHEX --fake-gen 10

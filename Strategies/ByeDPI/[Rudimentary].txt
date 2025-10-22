@@ -1,0 +1,20 @@
+/First 2 uncommented lines are reserved, DO NOT REMOVE
+/You can use FAKESNI and PAYLOADTLS for automatic substitution in the script
+/
+_strategyCurlExtraKeys#--proxy socks5://127.0.0.1:18081
+_strategyExtraKeys#--ip 127.0.0.1 --port 18081
+/
+--split 1 --disorder 3+s --mod-http=h,d --auto=torst --tlsrec 1+s
+--disoob 3+sni
+--tlsrec 3+sni
+--split 2 --disorder 7
+--disorder 2 --tlsrec 3+sni 
+--disoob 2 --tlsrec 3+sni
+--split 2 --fake 0+e --ttl 5 --tls-sni=FAKESNI
+--split 2 --disorder 3 --fake -1 --ttl 5
+--split 2 --disoob 3+sni --fake 517 --ttl 5
+--disoob 2+sni --fake 517 --ttl 5
+--disoob 3 --disorder 7
+--disoob 3+sni --split -1+host --tlsrec 1+sni
+--split 2 --disorder 3+sni --fake -1 --ttl 5
+--split 2
