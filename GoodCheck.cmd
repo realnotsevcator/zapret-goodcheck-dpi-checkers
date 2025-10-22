@@ -181,10 +181,8 @@ if not !ERRORLEVEL!==0 (
 call :WriteToConsoleAndToLog Checking up if checklists folder do exist...
 set "checkListFolder=!goodCheckFolder!!checkListFolder!\"
 if not exist "!checkListFolder!" (
-	set endedWithErrors=2
-	call :WriteToConsoleAndToLog
-	call :WriteToConsoleAndToLog ERROR: Can't find checklists folder
-	goto EOF
+        call :WriteToConsoleAndToLog WARNING: Can't find checklists folder, continuing without it
+        set "checkListFolder="
 )
 
 ::Checking up that strategies folder do exist
