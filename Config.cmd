@@ -2,10 +2,8 @@ chcp 1251
 
 ::============================================CONFIG============================================
 
-::Program folders can be set up here; leave empty to search in current folder
-set "_gdpiFolderOverride="
+::Program folder can be set up here; leave empty to search in current folder
 set "_zapretFolderOverride="
-set "_ciaFolderOverride="
 
 
 
@@ -18,28 +16,19 @@ set "_payloadQuic=quic_ietf_www_google_com.bin"
 
 
 
-::Whether to skip an automatic test of your internet provider's Google Cache Server; leave empty to default (false)
-set "_skipAutoISPsGCS="
-::Whether to skip an automatic test of TLS1.2 breakage; leave empty to default (true)
-set "_skipAutoTLS12BreakageTest="
-
 ::Curl minimum timeout override, in seconds; decreasing it is hightly unrecommended; leave empty to default (2)
 set "_curlMinTimeout="
 ::Extra keys for curl; leave empty to default
 set "_curlExtraKeys="
-::Curl anti-hanging mechanic, which start it in another window; leave empty to default (true)
-set "_curlAntiFreeze="
-
-::DNS-over-HTTPS resolver state; leave empty to default (true)
-set "_dohEnabled="
-::DNS-over-HTTPS resolver; leave empty to default (a list of pre-defined resolvers)
-set "_curlDoH="
-::Common resolver state; leave empty to default (false)
-set "_customCommonResolverEnabled="
-::Common resolver; leave empty to default (a list of pre-defined resolvers)
-set "_resolver="
-::Common resolver IP lookup version, either 4 or 6; leave empty to default (4)
-set "_customResolverIPv="
+::TCP 16-20 detection timeout override in milliseconds; leave empty to default (5000)
+set "_tcp1620TimeoutMs="
+::TCP 16-20 OK threshold override in bytes; leave empty to default (65536)
+set "_tcp1620OkThresholdBytes="
+::Custom TCP 16-20 test case (leave blank to skip)
+set "_tcp1620CustomId="
+set "_tcp1620CustomProvider="
+set "_tcp1620CustomUrl="
+set "_tcp1620CustomTimes="
 
 ::Output most successful strategies in a different file; leave empty to default (false)
 set "_outputMostSuccessfulStrategiesSeparately="
