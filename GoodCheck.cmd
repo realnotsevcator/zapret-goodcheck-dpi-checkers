@@ -707,16 +707,16 @@ exit /b
 :WriteToConsoleAndToLog
 SetLocal EnableDelayedExpansion
 set "message=%*"
-if "!message!"=="" (
-	echo.
-	if defined logFile (
-		echo.>>"!logFile!"
-	)
+if not defined message (
+        echo.
+        if defined logFile (
+                >>"!logFile!" echo.
+        )
 ) else (
-	echo !message!
-	if defined logFile (
-		echo !message!>>"!logFile!"
-	)
+        echo(!message!
+        if defined logFile (
+                >>"!logFile!" echo(!message!
+        )
 )
 EndLocal
 exit /b
@@ -724,14 +724,14 @@ exit /b
 :WriteToLog
 SetLocal EnableDelayedExpansion
 set "message=%*"
-if "!message!"=="" (
-	if defined logFile (
-		echo.>>"!logFile!"
-	)
+if not defined message (
+        if defined logFile (
+                >>"!logFile!" echo.
+        )
 ) else (
-	if defined logFile (
-		echo !message!>>"!logFile!"
-	)
+        if defined logFile (
+                >>"!logFile!" echo(!message!
+        )
 )
 EndLocal
 exit /b
