@@ -30,6 +30,7 @@ set "strategiesFolder=Strategies"
 set "curlFolder=Curl"
 set "payloadsFolder=Payloads"
 set "logsFolder=Logs"
+set "checkListFolder=Checklists"
 
 ::Strategy-related
 set "fakeSNI=www.google.com"
