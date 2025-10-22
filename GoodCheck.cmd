@@ -10,39 +10,22 @@ SetLocal EnableDelayedExpansion
 
 ::==============================CONFIG================================
 ::General
-set skipAutoISPsGCS=false
-set skipAutoTLS12BreakageTest=true
 set outputMostSuccessfulStrategiesSeparately=false
 
 ::Additional options
 set "curlExtraKeys="
 set "curlMinTimeout=2"
 
-set "dohEnabled=true"
-set "curlDoH[0]=https://one.one.one.one/dns-query"
-set "curlDoH[1]=https://1.1.1.1/dns-query"
-set "curlDoH[2]=https://1.1.1.2/dns-query"
-set "curlDoH[3]=https://dns.google/dns-query"
-set "curlDoH[4]=https://mozilla.cloudflare-dns.com/dns-query"
-set "curlDoH[5]=https://dns10.quad9.net/dns-query"
-set "curlDoH[6]=https://dns.controld.com/comss"
-set "curlDoH[7]=https://freedns.controld.com/p0"
-set "curlDoH[8]=https://dns.comss.one/dns-query"
-
-set "customCommonResolverEnabled=false"
-set "customResolverIPv=4"
-set "resolver[0]=1.1.1.1"
-set "resolver[1]=8.8.8.8"
-set "resolver[2]=9.9.9.9"
-set "resolver[3]=1.0.0.1"
-set "resolver[4]=8.8.4.4"
-
-set "curlAntiFreeze=true"
-set "curlAntiFreezeTempFile=CurlOutput.tmp"
+::TCP 16-20 detection options
+set "tcp1620TimeoutMs=5000"
+set "tcp1620OkThresholdBytes=65536"
+set "tcp1620CustomId=CUST-01"
+set "tcp1620CustomProvider=Custom"
+set "tcp1620CustomUrl="
+set "tcp1620CustomTimes=1"
 
 ::Folders and files
 set "mostSuccessfulStrategiesFile=MostSuccessfulStrategies.txt"
-set "checkListFolder=CheckLists"
 set "strategiesFolder=Strategies"
 set "curlFolder=Curl"
 set "payloadsFolder=Payloads"
@@ -57,29 +40,13 @@ set "payloadQuic=quic_ietf_www_google_com.bin"
 
 ::Web addresses for some functions
 set "netConnTestURL=https://ya.ru"
-set "tls12TestURL=https://tls-v1-2.badssl.com:1012"
 
-set "reportMappingURL[0]=https://redirector.gvt1.com/report_mapping?di=no" 
-set "reportMappingURL[1]=https://redirector.googlevideo.com/report_mapping?di=no"
-
-::Testing programs
-:: GoodbyeDPI
-set "gdpiName=GoodbyeDPI"
-set "gdpiExeName=goodbyedpi.exe"
-set "gdpiFolderOverride="
-set "gdpiServiceName=GoodbyeDPI"
-
+::Testing program
 :: Zapret
 set "zapretName=Zapret"
 set "zapretExeName=winws.exe"
 set "zapretFolderOverride="
 set "zapretServiceName=winws1"
-
-:: ByeDPI
-set "ciaName=ByeDPI"
-set "ciaExeName=ciadpi.exe"
-set "ciaFolderOverride="
-set "ciaServiceName=ByeDPI"
 
 
 ::====================================================================
@@ -92,29 +59,11 @@ set "goodCheckFolder=%~dp0"
 %emptyline%
 )
 
-::uzpkfa50vqlgb61wrmhc72xsnid83ytoje94-
-::0123456789abcdefghijklmnopqrstuvwxyz-
-set "lettersListA=u z p k f a 5 0 v q l g b 6 1 w r m h c 7 2 x s n i d 8 3 y t o j e 9 4 -"
-set "lettersListB=0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z -"
-
 set "choiceList=1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z"
 
 ::Hashes for programs
-:: GDPI
-::last official
-set "hash_gdpi_86_023rc32=9c3f16d5a0aff180f9d04ae6c0fe1f28"
-set "hash_gdpi_64_023rc32=afa7f66231b9cec7237e738b622c0181"
-
-::test builds
-set "hash_gdpi_86_023testbuild=a3131eabbf518ec6d8ed6dca8bf112e6"
-set "hash_gdpi_64_023testbuild=4d060be292eb50783c0d8022d4bf246c"
-set "hash_gdpi_64_testbuild_by_Decavoid=c25b01de6d5471f3b7337122049827f6"
-
 :: Zapret last
 set "hash_zapret_last=8c624e64742bc19447d52f61edec52db"
-
-:: ByeDPI last
-set "hash_cia_last=290bfd08896ebde8242a8573f6e678c7"
 
 
 ::====================================================================
@@ -124,18 +73,6 @@ for %%i in (!choiceList!) do (
 	set /A choiceArrayLen+=1
 	set choiceArray[!choiceArrayLen!]=%%i
 )
-set lettersArrayLen=-1
-for %%i in (!lettersListA!) do (
-	set /A lettersArrayLen+=1
-	set lettersArrayA[!lettersArrayLen!]=%%i
-)
-set lettersArrayLen=-1
-for %%i in (!lettersListB!) do (
-	set /A lettersArrayLen+=1
-	set lettersArrayB[!lettersArrayLen!]=%%i
-)
-
-
 ::====================================================================
 title GoodCheck !version!
 
@@ -191,9 +128,7 @@ call :WriteToConsoleAndToLog
 ::Taking variablies from env
 call :WriteToConsoleAndToLog Reading external variables...
 
-call :OverrideStringParam "!_gdpiFolderOverride!" gdpiFolderOverride
 call :OverrideStringParam "!_zapretFolderOverride!" zapretFolderOverride
-call :OverrideStringParam "!_ciaFolderOverride!" ciaFolderOverride
 
 call :OverrideStringParam "!_fakeSNI!" fakeSNI
 call :OverrideStringParam "!_fakeHexRaw!" fakeHexRaw
@@ -204,16 +139,12 @@ call :OverrideStringParam "!_payloadQuic!" payloadQuic
 call :OverrideStringParam "!_curlMinTimeout!" curlMinTimeout
 call :OverrideStringParam "!_curlExtraKeys!" curlExtraKeys
 
-call :OverrideBooleanParam "!_curlAntiFreeze!" curlAntiFreeze
-
-call :OverrideBooleanParam "!_dohEnabled!" dohEnabled
-call :OverrideStringParam "!_curlDoH!" curlDoH[0]
-call :OverrideBooleanParam "!_customCommonResolverEnabled!" customCommonResolverEnabled
-call :OverrideStringParam "!_resolver!" resolver[0]
-call :OverrideStringParam "!_customResolverIPv!" customResolverIPv
-
-call :OverrideBooleanParam "!_skipAutoISPsGCS!" skipAutoISPsGCS
-call :OverrideBooleanParam "!_skipAutoTLS12BreakageTest!" skipAutoTLS12BreakageTest
+call :OverrideStringParam "!_tcp1620TimeoutMs!" tcp1620TimeoutMs
+call :OverrideStringParam "!_tcp1620OkThresholdBytes!" tcp1620OkThresholdBytes
+call :OverrideStringParam "!_tcp1620CustomId!" tcp1620CustomId
+call :OverrideStringParam "!_tcp1620CustomProvider!" tcp1620CustomProvider
+call :OverrideStringParam "!_tcp1620CustomUrl!" tcp1620CustomUrl
+call :OverrideStringParam "!_tcp1620CustomTimes!" tcp1620CustomTimes
 
 call :OverrideBooleanParam "!_outputMostSuccessfulStrategiesSeparately!" outputMostSuccessfulStrategiesSeparately
 call :OverrideStringParam "!_mostSuccessfulStrategiesFile!" mostSuccessfulStrategiesFile
@@ -285,12 +216,10 @@ if defined PROCESSOR_ARCHITEW6432 (set "processorSubFolder=x86_64")
 call :WriteToConsoleAndToLog Checking up if Curl do exist...
 if defined curlFolder (
 	set "curl=!goodCheckFolder!!curlFolder!\!processorSubFolder!\curl.exe"
-	if not exist "!curl!" (
-		call :WriteToConsoleAndToLog WARNING: Can't find Curl in it's folder...
-		set "curl=!goodCheckFolder!curl.exe"
-		::We are setting location for temp file here, since the system's curl located in system32 and we can't create tmp file there
-		set "curlAntiFreezeTempFile=%temp%\!curlAntiFreezeTempFile!"
-	)
+        if not exist "!curl!" (
+                call :WriteToConsoleAndToLog WARNING: Can't find Curl in it's folder...
+                set "curl=!goodCheckFolder!curl.exe"
+        )
 )
 if not exist "!curl!" (
 	call :WriteToConsoleAndToLog WARNING: Can't find Curl in script folder...
@@ -336,108 +265,11 @@ if not !ERRORLEVEL!==0 (
 	)
 )
 
-::Setting up DoH
-if "!dohEnabled!"=="true" (
-	call :WriteToConsoleAndToLog Setting up DNS-over-HTTPS resolver...
-	for /L %%i in (0,1,15) do (
-		if not "!curlDoH[%%i]!"=="" (
-			call :WriteToConsoleAndToLog Trying "!curlDoH[%%i]!"...
-			"!curl!" -m !curlMinTimeout! -so NUL "!curlDoH[%%i]!"
-			if !ERRORLEVEL!==0 (
-				call :WriteToConsoleAndToLog Resolver accessible
-				set "curlDoH=!curlDoH[%%i]!"
-				set "curlExtraKeys=!curlExtraKeys! --doh-url !curlDoH[%%i]!"
-				goto BREAKRESOLVERSETUPLOOP
-			)
-		) else (
-			call :WriteToConsoleAndToLog Can't find working DNS-over-HTTPS resolver
-			set "dohEnabled=false"
-			goto BREAKRESOLVERSETUPLOOP
-		)
-	)
-)
-:BREAKRESOLVERSETUPLOOP
-
-::Setting up common resolver
-if "!dohEnabled!"=="false" if "!customCommonResolverEnabled!"=="true" (
-	if "!customResolverIPv!"=="6" (set "resolveType=AAAA") else (set "resolveType=A")
-	
-	call :WriteToConsoleAndToLog Setting up DNS resolver...
-	for /L %%i in (0,1,15) do (
-		if not "!resolver[%%i]!"=="" (
-			call :WriteToConsoleAndToLog Pinging "!resolver[%%i]!"...
-			ping -n 1 -w 2000 !resolver[%%i]!
-			if !ERRORLEVEL!==0 (
-				call :WriteToConsoleAndToLog Resolver accessible
-				set "resolver=!resolver[%%i]!"
-				goto BREAKRESOLVERSETUPLOOP2
-			)
-		) else (
-			call :WriteToConsoleAndToLog Can't find working resolver
-			set "customCommonResolverEnabled=false"
-			goto BREAKRESOLVERSETUPLOOP2
-		)
-	)
-)
-:BREAKRESOLVERSETUPLOOP2
-
 ::Looking for executables
 call :WriteToConsoleAndToLog Looking for executables...
-::...for GDPI
-if defined gdpiFolderOverride (
-	call :LookForExe "!gdpiExeName!" "!gdpiFolderOverride!" "!gdpiName!" gdpiExeFullpath
-	if not defined gdpiExeFullpath (
-		call :LookForExe "!processorSubFolder!\!gdpiExeName!" "!gdpiFolderOverride!" "!gdpiName!" gdpiExeFullpath
-	)
-)
-if not defined gdpiExeFullpath (
-	call :LookForExe "!gdpiExeName!" "!goodCheckFolder!" "!gdpiName!" gdpiExeFullpath
-)
-if not defined gdpiExeFullpath (
-	call :LookForExe "!gdpiExeName!" "!goodCheckFolder!!processorSubFolder!" "!gdpiName!" gdpiExeFullpath
-)
-if not defined gdpiExeFullpath (
-	call :WriteToConsoleAndToLog Can't find !gdpiName! anywhere...
-) else (
-	::...Checking if it's outdated
-	if "!winVersion!"=="10" (
-		call :CalculateHash "!gdpiExeFullpath!" hash
-		set confirmed=
-		if !hash!==!hash_gdpi_64_023testbuild! (
-			call :WriteToConsoleAndToLog You're using a 64-bit test build version with --fake-with-sni support
-			set confirmed=1
-			set "gdpiVersion=(newest test build detected)"
-		)
-		if !hash!==!hash_gdpi_86_023testbuild! (
-			call :WriteToConsoleAndToLog You're using a 32-bit test build version with --fake-with-sni support
-			set confirmed=1
-			set "gdpiVersion=(newest test build detected)"
-		)
-		if !hash!==!hash_gdpi_64_testbuild_by_Decavoid! (
-			call :WriteToConsoleAndToLog You're using a 64-bit test build version with --fake-with-sni support
-			set confirmed=1
-			set "gdpiVersion=(newest test build detected)"
-		)
-		if !hash!==!hash_gdpi_64_023rc32! (
-			call :WriteToConsoleAndToLog You're using a 64-bit 0.2.3-rc3-2 version. It doesn't have --fake-with-sni support, but supports --fake-from-hex.
-			set confirmed=1
-			set "gdpiVersion=(last official build detected: no "--fake-with-sni" support)"
-		)
-		if !hash!==!hash_gdpi_86_023rc32! (
-			call :WriteToConsoleAndToLog You're using a 32-bit 0.2.3-rc3-2 version. It doesn't have --fake-with-sni support, but supports --fake-from-hex.
-			set confirmed=1
-			set "gdpiVersion=(last official build detected: no "--fake-with-sni" support)"
-		)
-		if not defined confirmed (
-			call :WriteToConsoleAndToLog You're using either an outdated or unknown version of "!gdpiName!" - it can cause problems
-			set "gdpiVersion=(unknown or outdated version)"
-		)
-	)
-)
-
 ::...for Zapret
 if defined zapretFolderOverride (
-	call :LookForExe "!zapretExeName!" "!zapretFolderOverride!" "!zapretName!" zapretExeFullpath
+        call :LookForExe "!zapretExeName!" "!zapretFolderOverride!" "!zapretName!" zapretExeFullpath
 )
 if not defined zapretExeFullpath (
 	call :LookForExe "zapret-winws\!zapretExeName!" "!zapretFolderOverride!" "!zapretName!" zapretExeFullpath
@@ -448,10 +280,10 @@ if not defined zapretExeFullpath (
 if not defined zapretExeFullpath (
 	call :WriteToConsoleAndToLog Can't find "!zapretName!" anywhere...
 ) else (
-	::...Checking if it's outdated
-	call :CalculateHash "!zapretExeFullpath!" hash
-	set confirmed=
-	if "!winVersion!"=="10" (
+        ::...Checking if it's outdated
+        call :CalculateHash "!zapretExeFullpath!" hash
+        set confirmed=
+        if "!winVersion!"=="10" (
 		if !hash!==!hash_zapret_last! (
 			call :WriteToConsoleAndToLog You're using the last version of "!zapretName!"
 			set "zapretVersion=(last official build detected)"
@@ -460,32 +292,6 @@ if not defined zapretExeFullpath (
 		if not defined confirmed (
 			call :WriteToConsoleAndToLog You're using either an outdated or unknown version of "!zapretName!" - it can cause problems
 			set "zapretVersion=(unknown or outdated version)"
-		)
-	)
-)
-
-::...for ByeDPI
-if defined ciaFolderOverride (
-	call :LookForExe "!ciaExeName!" "!ciaFolderOverride!" "!ciaName!" ciaExeFullpath
-)
-if not defined ciaExeFullpath (
-	call :LookForExe "!ciaExeName!" "!goodCheckFolder!" "!ciaName!" ciaExeFullpath
-)
-if not defined ciaExeFullpath (
-	call :WriteToConsoleAndToLog Can't find "!ciaName!" anywhere...
-) else (
-	::...Checking if it's outdated
-	call :CalculateHash "!ciaExeFullpath!" hash
-	set confirmed=
-	if "!winVersion!"=="10" (
-		if !hash!==!hash_cia_last! (
-			call :WriteToConsoleAndToLog You're using the last version of "!ciaName!"
-			set "ciaVersion=(last official build detected)"
-			set confirmed=1
-		)
-		if not defined confirmed (
-			call :WriteToConsoleAndToLog You're using either an outdated or unknown version of "!ciaName!" - it can cause problems
-			set "ciaVersion=(unknown or outdated version)"
 		)
 	)
 )
@@ -502,35 +308,20 @@ call :WriteToLog Script is ready.
 cls
 
 echo.
-echo "!gdpiName!", "!zapretName!" and "!ciaName!" will be closed.
-echo Their services will be stopped and removed.
+echo "!zapretName!" will be closed.
+echo Its services will be stopped and removed.
 echo.
 echo.
 echo Choose a program to test with:
 echo.
 
-::Lifehack for elements to be in order. Don't press shift+ABC during this choice at runtime - it will break stuff
 set choiceTest=
-if defined gdpiExeFullpath (
-	echo Press [1] - test with "!gdpiName!" !gdpiVersion!
-	set choiceTest=!choiceTest!1
-) else (
-	echo -
-	set choiceTest=!choiceTest!A
-)
 if defined zapretExeFullpath (
-	echo Press [2] - test with "!zapretName!" !zapretVersion!
-	set choiceTest=!choiceTest!2
+        echo Press [1] - test with "!zapretName!" !zapretVersion!
+        set choiceTest=!choiceTest!1
 ) else (
-	echo -
-	set choiceTest=!choiceTest!B
-)
-if defined ciaExeFullpath (
-	echo Press [3] - test with "!ciaName!" !ciaVersion!
-	set choiceTest=!choiceTest!3
-) else (
-	echo -
-	set choiceTest=!choiceTest!C
+        echo -
+        set choiceTest=!choiceTest!A
 )
 set choiceTest=!choiceTest!0
 echo.
@@ -539,10 +330,10 @@ echo Press [0] - cancel and exit
 choice /C !choiceTest! /CS >NUL
 set testWith=!ERRORLEVEL!
 
-if !testWith!==4 (
-	call :WriteToConsoleAndToLog
-	call :WriteToConsoleAndToLog Cancelling...
-	goto EOF
+if !testWith!==2 (
+        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog Cancelling...
+        goto EOF
 )
 
 echo.
@@ -550,44 +341,15 @@ echo -
 echo.
 
 if !testWith!==1 (
-	call :UserInputSubchoice "!gdpiName!" strategiesList
-	if not "!strategiesList!"=="-1" (
-		set "exeName=!gdpiExeName!"
-		set "serviceName=!gdpiServiceName!"
-		set "exeFullpath=!gdpiExeFullpath!"
-		set "programName=!gdpiName!"
-	) else (
-		goto CHOICELOOP
-	)
-)
-if !testWith!==2 (
-	call :UserInputSubchoice "!zapretName!" strategiesList
-	if not "!strategiesList!"=="-1" (
-		set "exeName=!zapretExeName!"
-		set "serviceName=!zapretServiceName!"
-		set "exeFullpath=!zapretExeFullpath!"
-		set "programName=!zapretName!"
-	) else (
-		goto CHOICELOOP
-	)
-)
-if !testWith!==3 (
-	call :UserInputSubchoice "!ciaName!" strategiesList
-	if not "!strategiesList!"=="-1" (
-		set "exeName=!ciaExeName!"
-		set "serviceName=!ciaServiceName!"
-		set "exeFullpath=!ciaExeFullpath!"
-		set "programName=!ciaName!"
-		
-		::Showing warning message for ByeDPI
-		echo.
-		echo ATTENTION: "!ciaName!" functioning as a SOCKS Proxy. Make sure it isn't blocked by your firewall
-		echo.
-		echo Press any button to continue...
-		pause>NUL
-	) else (
-		goto CHOICELOOP
-	)
+        call :UserInputSubchoice "!zapretName!" strategiesList
+        if not "!strategiesList!"=="-1" (
+                set "exeName=!zapretExeName!"
+                set "serviceName=!zapretServiceName!"
+                set "exeFullpath=!zapretExeFullpath!"
+                set "programName=!zapretName!"
+        ) else (
+                goto CHOICELOOP
+        )
 )
 
 call :WriteToConsoleAndToLog
@@ -632,154 +394,90 @@ call :WriteToConsoleAndToLog
 
 
 ::====================================================================
-::Choosing a checklistlist
+::Preparing TCP 16-20 DPI detection test suite
 cls
 
 echo.
-echo "!gdpiName!", "!zapretName!" and "!ciaName!" will be closed.
-echo Their services will be stopped and removed.
+echo "!zapretName!" will be closed.
+echo Its services will be stopped and removed.
 echo.
 echo.
-echo Choose a checklist:
+echo Preparing TCP 16-20 DPI detection checks...
 echo.
+echo Press [4] to continue
+echo Press [0] to exit
 
-set checkListFile=
-call :UserInputCheckListChoice checkListFile
-
-echo.
-if "!checkListFile!"=="-1" (
-	call :WriteToConsoleAndToLog
-	call :WriteToConsoleAndToLog Cancelling...
-	goto EOF
-)
-if not defined checkListFile (
-	call :WriteToConsoleAndToLog Proceeding without a checklist...
-) else (
-	call :WriteToConsoleAndToLog Proceeding with a "!checkListFile!" checklist...
+choice /c 40 /CS >NUL
+set _choice=!ERRORLEVEL!
+if !_choice!==2 (
+        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog Cancelling...
+        goto EOF
 )
 
-call :WriteToConsoleAndToLog
-call :WriteToConsoleAndToLog -------------------------------
-call :WriteToConsoleAndToLog
+::Normalizing TCP 16-20 settings
+if not defined tcp1620TimeoutMs (set "tcp1620TimeoutMs=5000")
+for /F "delims=0123456789" %%i in ("!tcp1620TimeoutMs!") do (set "tcp1620TimeoutMs=5000")
+if not defined tcp1620OkThresholdBytes (set "tcp1620OkThresholdBytes=65536")
+for /F "delims=0123456789" %%i in ("!tcp1620OkThresholdBytes!") do (set "tcp1620OkThresholdBytes=65536")
+if not defined tcp1620CustomTimes (set "tcp1620CustomTimes=1")
+for /F "delims=0123456789" %%i in ("!tcp1620CustomTimes!") do (set "tcp1620CustomTimes=1")
 
+set /A tcp1620TimeoutSec=(tcp1620TimeoutMs+999)/1000
+if !tcp1620TimeoutSec! LEQ 0 (set tcp1620TimeoutSec=1)
+set /A tcp1620CustomTimes+=0
+if !tcp1620CustomTimes! LEQ 0 (set tcp1620CustomTimes=1)
 
-::====================================================================
-::Looking for ISP's GCS
-if "!skipAutoISPsGCS!"=="true" (
-	call :WriteToConsoleAndToLog Skipping ISP's Google Cache Servers auto-test
-	goto SKIPAUTOGCS
-)
-
-::Extracting our GGC cluster codename
-call :ExtractClusterCodename clusterCodename
-if defined clusterCodename (
-	call :WriteToConsoleAndToLog Your cluster codename: !clusterCodename!
-) else (
-	set endedWithErrors=1
-	call :WriteToConsoleAndToLog WARNING: Can't extract cluster codename
-	call :WriteToConsoleAndToLog Make sure "!reportMappingURL[0]!" is accessible
-	call :WriteToConsoleAndToLog
-	echo Press any button to skip and continue...
-	set "skipAutoISPsGCS=true"
-	goto SKIPAUTOGCS
-)
-
-::Converting our cluster codename into a proper web address
-for /L %%i in (0,1,99) do (
-	set "letter=!clusterCodename:~%%i,1!"
-	if not defined letter (goto BREAKCONVCODENAME)
-	
-	for /L %%j in (0,1,!lettersArrayLen!) do (
-		if !letter!==!lettersArrayA[%%j]! (set clusterName=!clusterName!!lettersArrayB[%%j]!)
-	)
-)
-:BREAKCONVCODENAME
-
-set "autoGCS=https://rr1---sn-!clusterName!.googlevideo.com"
-
-call :WriteToConsoleAndToLog Your Google Cache Server web address: !autoGCS!
-
-:SKIPAUTOGCS
-
-call :WriteToConsoleAndToLog
-call :WriteToConsoleAndToLog -------------------------------
+call :WriteToConsoleAndToLog Preparing TCP 16-20 DPI detection test suite...
 call :WriteToConsoleAndToLog
 
+set testCaseIndex=-1
+call :AddTcp1620Test "CF-01" "Cloudflare" "https://cdn.cookielaw.org/scripttemplates/202501.2.0/otBannerSdk.js" "1"
+call :AddTcp1620Test "CF-02" "Cloudflare" "https://genshin.jmp.blue/characters/all#" "1"
+call :AddTcp1620Test "CF-03" "Cloudflare" "https://api.frankfurter.dev/v1/2000-01-01..2002-12-31" "1"
+call :AddTcp1620Test "DO-01" "DigitalOcean" "https://genderize.io/" "1"
+call :AddTcp1620Test "HE-01" "Hetzner" "https://bible-api.com/john+1,2,3,4,5,6,7,8,9,10" "1"
+call :AddTcp1620Test "HE-02" "Hetzner" "https://tcp1620-01.dubybot.live/1MB.bin" "1"
+call :AddTcp1620Test "HE-03" "Hetzner" "https://tcp1620-02.dubybot.live/1MB.bin" "1"
+call :AddTcp1620Test "HE-04" "Hetzner" "https://tcp1620-05.dubybot.live/1MB.bin" "1"
+call :AddTcp1620Test "HE-05" "Hetzner" "https://tcp1620-06.dubybot.live/1MB.bin" "1"
+call :AddTcp1620Test "OVH-01" "OVH" "https://eu.api.ovh.com/console/rapidoc-min.js" "1"
+call :AddTcp1620Test "OVH-02" "OVH" "https://ovh.sfx.ovh/10M.bin" "1"
+call :AddTcp1620Test "OR-01" "Oracle" "https://oracle.sfx.ovh/10M.bin" "1"
+call :AddTcp1620Test "AWS-01" "AWS" "https://tms.delta.com/delta/dl_anderson/Bootstrap.js" "1"
+call :AddTcp1620Test "AWS-02" "AWS" "https://corp.kaltura.com/wp-content/cache/min/1/wp-content/themes/airfleet/dist/styles/theme.css" "1"
+call :AddTcp1620Test "FST-01" "Fastly" "https://www.juniper.net/content/dam/www/assets/images/diy/DIY_th.jpg/jcr:content/renditions/600x600.jpeg" "1"
+call :AddTcp1620Test "FST-02" "Fastly" "https://www.graco.com/etc.clientlibs/clientlib-site/resources/fonts/lato/Lato-Regular.woff2" "1"
+call :AddTcp1620Test "AKM-01" "Akamai" "https://www.lg.com/lg5-common-gp/library/jquery.min.js" "1"
+call :AddTcp1620Test "AKM-02" "Akamai" "https://media-assets.stryker.com/is/image/stryker/gateway_1?$max_width_1410$" "1"
 
-::====================================================================
-::Creating a string for curl threaded request, reading and outputting sites from checklist to console and log
-call :WriteToConsoleAndToLog Processing checklist...
-call :WriteToConsoleAndToLog
-
-set curlThreadsNum=0
-set curlURL=
-set domainIP=
-
-if  "!skipAutoTLS12BreakageTest!"=="false" (
-	set /A curlThreadsNum+=1
-	set curlURL=!curlURL! !tls12TestURL! -o NUL
-	call :WriteToConsoleAndToLog Site to check: !tls12TestURL! ^(TLS 1.2 Test site^)
-	REM call :ResolveDomain !tls12TestURL! domainIP
-	REM if defined domainIP (
-		REM set curlURL=!curlURL! --resolve !tls12TestURL:https://=!:443:!domainIP!
-	REM )
-) else (
-	call :WriteToConsoleAndToLog Skipping TLS 1.2 breakage auto-test
+if defined tcp1620CustomUrl (
+        call :AddTcp1620Test "!tcp1620CustomId!" "!tcp1620CustomProvider!" "!tcp1620CustomUrl!" "!tcp1620CustomTimes!"
 )
 
-if "!skipAutoISPsGCS!"=="false" (
-	set /A curlThreadsNum+=1
-	set curlURL=!curlURL! !autoGCS! -o NUL
-	call :WriteToConsoleAndToLog Site to check: !autoGCS! ^(Your ISPs Google Cache Server^)
-	call :ResolveDomain !autoGCS! domainIP
-	if defined domainIP (
-		set curlURL=!curlURL! --resolve !autoGCS:https://=!:443:!domainIP!
-	)
-)
-
-if exist "!checkListFile!" (
-	for /F "usebackq tokens=* eol=/" %%i in ("!checkListFile!") do (
-		set /A curlThreadsNum+=1
-		call :CleanURL "%%i" url
-		set curlURL=!curlURL! !url! -o NUL
-		call :WriteToConsoleAndToLog Site to check: !url!
-		call :ResolveDomain !url! domainIP
-		if defined domainIP (
-			set curlURL=!curlURL! --resolve !url:https://=!:443:!domainIP!
-		)
-	)
-)
-if  !curlThreadsNum!==1 (
-	if "!dohEnabled!"=="true" (
-		set /A curlThreadsNum+=1
-		set curlURL=!curlURL! 0.0.0.0 -o NUL
-		call :WriteToConsoleAndToLog Site to check: 0.0.0.0 ^(Workaround for Curl DoH problem^)
-	)
+set /A curlThreadsNum=0
+for /L %%i in (0,1,!testCaseIndex!) do (
+        set "tcpTimes=!testTimes[%%i]!"
+        if not defined tcpTimes (set "tcpTimes=1")
+        set /A curlThreadsNum+=tcpTimes
+        set "timesLabel="
+        if !tcpTimes! GTR 1 (set "timesLabel= (x!tcpTimes!)")
+        call :WriteToConsoleAndToLog Test: !testId[%%i]! (!testProvider[%%i]!) - !testUrl[%%i]!!timesLabel!
 )
 
 if  !curlThreadsNum!==0 (
-	set endedWithErrors=2
-	call :WriteToConsoleAndToLog
-	call :WriteToConsoleAndToLog ERROR: Nothing to check
-	goto EOF
+        set endedWithErrors=2
+        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog ERROR: Nothing to check
+        goto EOF
 )
+
+set /A curlParallelRequestTimeout=tcp1620TimeoutSec
+if !curlParallelRequestTimeout! LEQ 0 (set curlParallelRequestTimeout=1)
 
 call :WriteToConsoleAndToLog
-
-
-::====================================================================
-::Estimating curl timeout: 2 sec for less than 100 threads, then +1 sec for every additional 100 threads
-set curlParallelRequestTimeout=!curlMinTimeout!
-for /L %%i in (100,100,300) do (
-	if !curlThreadsNum! GTR %%i (
-		set /A curlParallelRequestTimeout+=1
-	) else (
-		goto BREAKTIMEOUTESTIM
-	)
-)
-:BREAKTIMEOUTESTIM
-
-call :WriteToConsoleAndToLog Total: !curlThreadsNum! sites     Curl timeout: !curlParallelRequestTimeout! seconds
+call :WriteToConsoleAndToLog Total: !curlThreadsNum! tests     Timeout per test: !tcp1620TimeoutMs! ms ^(~!curlParallelRequestTimeout! s^)     Threshold: !tcp1620OkThresholdBytes! bytes
+call :WriteToConsoleAndToLog
 
 ::====================================================================
 ::Choosing how many passes to do
@@ -789,12 +487,12 @@ set numberOfPasses=1
 :USERCHOICENUMBEROFPASSES
 cls
 
-set /A "estimatedRawSeconds=!numberOfPasses!*!_strategiesNum!*(!curlParallelRequestTimeout!+1)"
+set /A "estimatedRawSeconds=!numberOfPasses!*!_strategiesNum!*(!curlThreadsNum!*!curlParallelRequestTimeout!+1)"
 call :SecondsToMinutesSeconds !estimatedRawSeconds! estimatedMinutes estimatedSeconds
 
 echo.
-echo "!gdpiName!", "!zapretName!" and "!ciaName!" will be closed.
-echo Their services will be stopped and removed.
+echo "!zapretName!" will be closed.
+echo Its services will be stopped and removed.
 echo.
 echo.
 echo Estimated time for a test: !estimatedMinutes! minutes !estimatedSeconds! seconds
@@ -847,13 +545,8 @@ call :WriteToConsoleAndToLog
 ::====================================================================
 call :WriteToConsoleAndToLog Terminating active programs and services...
 
-call :PurgeProgram "!gdpiExeName!"
 call :PurgeProgram "!zapretExeName!"
-call :PurgeProgram "!ciaExeName!"
-
-call :PurgeService "!gdpiServiceName!"
 call :PurgeService "!zapretServiceName!"
-call :PurgeService "!ciaServiceName!"
 
 call :PurgeWinDivert
 
@@ -868,7 +561,7 @@ cls
 echo.
 
 ::Time estimation
-set /A "_oneCycleTime=!curlParallelRequestTimeout!+1"
+set /A "_oneCycleTime=!curlThreadsNum!*!curlParallelRequestTimeout!+1"
 set /A "estimatedRawSeconds=!numberOfPasses!*!_strategiesNum!*!_oneCycleTime!"
 call :SecondsToMinutesSeconds !estimatedRawSeconds! estimatedMinutes estimatedSeconds
 
@@ -886,7 +579,8 @@ for /L %%i in (0,1,!strategiesNum!) do (
 	timeout /T 1 >NUL
 	rem choice /C Q /D Q /CS /T 1 >NUL
 	
-	set lowestSuccesses=0
+        set lowestSuccesses=0
+        set "lowestSummary="
 	for /L %%z in (1,1,!numberOfPasses!) do (
 		
 		title GoodCheck !version! - Testing in progress: %%i out of !strategiesNum! - Time remaining: !estimatedMinutes! minutes !estimatedSeconds! seconds
@@ -895,66 +589,27 @@ for /L %%i in (0,1,!strategiesNum!) do (
 		set /A "estimatedRawSeconds=!estimatedRawSeconds!-!_oneCycleTime!"
 		call :SecondsToMinutesSeconds !estimatedRawSeconds! estimatedMinutes estimatedSeconds
 	
-		set "result="
-		
-		pushd "!curl:curl.exe=!"
-		
-		::Workaround against curl not responding in time is applied here
-		if "!curlAntiFreeze!"=="false" (
-			call :WriteToConsoleAndToLog Starting up Curl...
-			for /F "tokens=*" %%j in ('curl.exe !curlExtraKeys! -sm !curlParallelRequestTimeout! -w "%%{url}[ip:%%{remote_ip}]$%%{response_code} " -Z --parallel-immediate --parallel-max 300 !curlURL!') do (
-				set "result=!result!%%j"
-			)
-			call :WriteToConsoleAndToLog Reading results...
-		) else (
-			if exist "!curlAntiFreezeTempFile!" (del "!curlAntiFreezeTempFile!")
-			
-			call :WriteToConsoleAndToLog Starting up Curl...
-			start "Curling..." /min curl.exe !curlExtraKeys! -sm !curlParallelRequestTimeout! -w "%%output{>>"!curlAntiFreezeTempFile!"}%%{url}[ip:%%{remote_ip}]$%%{response_code} " -Z --parallel-immediate --parallel-max 300 !curlURL!
-			
-			call :WriteToConsoleAndToLog Waiting for Curl to do it's job...
-			timeout /T !_oneCycleTime! >NUL
-			rem choice /C Q /D Q /CS /T !_oneCycleTime! >NUL
-			call :WriteToConsoleAndToLog Terminating Curl if it's still there...
-			taskkill /T /F /IM "curl.exe" >NUL 2>&1
-			call :WriteToConsoleAndToLog Reading results...
-			for /F "usebackq delims=" %%x in ("!curlAntiFreezeTempFile!") do (set "result=%%x")
-			if exist "!curlAntiFreezeTempFile!" (del "!curlAntiFreezeTempFile!")
-		)
-		
-		popd
-		
-		::Parsing result
-		set successes=0
-		set tls12BreakageMessage=
-		
-		for %%j in (!result!) do (
-			for /F "tokens=1,2 delims=$" %%p in ("%%j") do (
-				if not "%%q"=="000" (
-					set /A successes+=1
-					call :WriteToConsoleAndToLog WORKING		%%p
-				) else (
-					call :WriteToConsoleAndToLog NOT WORKING	%%p
-				)
-				if "%%p"=="!tls12TestURL!" (
-					if "%%q"=="000" (set "tls12BreakageMessage=   (TLS 1.2 Possible Breakage)")
-				)
-			)
-		)
-		
+		call :RunTcp1620Suite passSuccesses
+		set successes=!passSuccesses!
+
 		if "!lowestSuccesses!"=="0" (
 			set lowestSuccesses=!successes!
+			set "lowestSummary=!tcp1620LastSummary!"
 		) else (
-			if !successes! LSS !lowestSuccesses! (set lowestSuccesses=!successes!)
+			if !successes! LSS !lowestSuccesses! (
+				set lowestSuccesses=!successes!
+				set "lowestSummary=!tcp1620LastSummary!"
+			)
 		)
-		
-		call :WriteToConsoleAndToLog Successes - Pass %%z: !successes!/!curlThreadsNum!!tls12BreakageMessage!
+
+		call :WriteToConsoleAndToLog Successes - Pass %%z: !successes!/!curlThreadsNum! ^(!tcp1620LastSummary!^)
 		call :WriteToConsoleAndToLog
 	)	
 		
 	::Writing to a variable for future use
-	set "resultsArray[%%i]=!lowestSuccesses!/!strategiesArray[%%i]!!tls12BreakageMessage!"
-	set "successesExist[!lowestSuccesses!]=1"
+        if not defined lowestSummary (set "lowestSummary=No summary")
+        set "resultsArray[%%i]=!lowestSuccesses!/!strategiesArray[%%i]! - !lowestSummary!"
+        set "successesExist[!lowestSuccesses!]=1"
 	
 	call :WriteToConsoleAndToLog Terminating !programName!...
 	call :PurgeProgram "!exeName!"
@@ -1010,15 +665,6 @@ if "!outputMostSuccessfulStrategiesSeparately!"=="true" (
 )
 
 call :WriteToConsoleAndToLog -------------------------------
-call :WriteToConsoleAndToLog
-
-if "!dohEnabled!"=="true" (
-	call :WriteToConsoleAndToLog DNS-over-HTTPS resolver used: "!curlDoH!"
-)
-if "!dohEnabled!"=="false" if "!customCommonResolverEnabled!"=="true" (
-	call :WriteToConsoleAndToLog Custom DNS resolver used: "!resolver!"
-)
-
 call :WriteToConsoleAndToLog
 
 echo -------------------------------
@@ -1091,20 +737,6 @@ if "!message!"=="" (
 EndLocal
 exit /b
 
-:ExtractClusterCodename
-SetLocal EnableDelayedExpansion
-set result=
-for /L %%i in (0,1,10) do (
-	if not defined result (
-		if not "!reportMappingURL[%%i]!"=="" (
-			for /F "usebackq tokens=3 delims= " %%j in (`"!curl!" -sm !curlMinTimeout! !reportMappingURL[%%i]!`) do (
-				set "result=%%j"
-			)
-		)
-	)
-)
-EndLocal && (set "%~1=%result%")
-exit /b
 
 :LookForExe
 SetLocal EnableDelayedExpansion
@@ -1127,39 +759,154 @@ if exist "!fullpath!" (
 EndLocal && (set "%~4=%fullpath%")
 exit /b
 
-:CleanURL
-SetLocal EnableDelayedExpansion
-set "url=%~1"
-set "url=!url:https://=!"
-set "url=!url:http://=!"
-for /F "tokens=1 delims=/" %%i in ("!url!") do (
-	set "url=https://%%i"
-)
-EndLocal && (set "%~2=%url%")
-exit /b
 
 :FormatStrategy
 SetLocal EnableDelayedExpansion
 set "strategy=%~1"
 set "program=%~2"
 set "strategy=!strategyExtraKeys! !strategy!"
-::mode for GDPI
-if "!program!"=="!gdpiName!" (
-	set "strategy=!strategy:FAKESNI=%fakeSNI%!"
-	set "strategy=!strategy:FAKEHEX=%fakeHexRaw%!"
-)
 ::mode for Zapret
 if "!program!"=="!zapretName!" (
-	set "strategy=!strategy:PAYLOADTLS=%payloadTLS%!"
-	set "strategy=!strategy:PAYLOADQUIC=%payloadQuic%!"
-)
-::mode for ByeDPI
-if "!program!"=="!ciaName!" (
-	set "strategy=!strategy:FAKESNI=%fakeSNI%!"
-	set "strategy=!strategy:PAYLOADTLS=%payloadTLS%!"
-	set "strategy=!strategy:FAKEHEXBYTES=%fakeHexBytes%!"
+        set "strategy=!strategy:PAYLOADTLS=%payloadTLS%!"
+        set "strategy=!strategy:PAYLOADQUIC=%payloadQuic%!"
 )
 EndLocal && (set "%~3=%strategy%")
+exit /b
+
+:AddTcp1620Test
+set "testTimesValue=%~4"
+if not defined testTimesValue (set "testTimesValue=1")
+set /A testCaseIndex+=1
+set "testId[!testCaseIndex!]=%~1"
+set "testProvider[!testCaseIndex!]=%~2"
+set "testUrl[!testCaseIndex!]=%~3"
+set "testTimes[!testCaseIndex!]=!testTimesValue!"
+set "testTimesValue="
+exit /b
+
+:AppendUniqueQuery
+SetLocal EnableDelayedExpansion
+set "base=%~1"
+for /F "tokens=1* delims=#" %%a in ("!base!") do (
+        set "base=%%a"
+)
+set "marker=?"
+if not "!base!"=="!base:?=!" (set "marker=&")
+set "randomValue=%random%%random%%random%"
+set "unique=!base!!marker!t=!randomValue!"
+EndLocal && (set "%~2=%unique%")
+exit /b
+
+:RunSingleTcp1620Test
+SetLocal EnableDelayedExpansion
+set "testId=%~1"
+set "testProvider=%~2"
+set "testUrl=%~3"
+set "iteration=%~4"
+set "iterationTotal=%~5"
+call :AppendUniqueQuery "!testUrl!" uniqueUrl
+set "targetUrl=!uniqueUrl!"
+set "curlMeta="
+set "curlErrorLine="
+set "writeOut=HTTP_CODE=%%{http_code};SIZE=%%{size_download};IP=%%{remote_ip};ERR=%%{errormsg}"
+for /F "usebackq delims=" %%O in (`"!curl!" !curlExtraKeys! --silent --show-error --no-progress-meter --max-time !tcp1620TimeoutSec! --connect-timeout !tcp1620TimeoutSec! --range 0-65535 --output NUL --write-out "!writeOut!" "!targetUrl!" 2^>^&1`) do (
+        set "line=%%O"
+        if not defined curlMeta (
+                if not "!line:HTTP_CODE=!=!line!" (
+                        set "curlMeta=!line!"
+                ) else (
+                        if not defined curlErrorLine (set "curlErrorLine=!line!")
+                )
+        ) else (
+                if not "!line:HTTP_CODE=!=!line!" (
+                        set "curlMeta=!line!"
+                )
+        )
+)
+set "curlExit=!ERRORLEVEL!"
+set "httpCode=000"
+set "downloadSize=0"
+set "remoteIp="
+set "errorMessage="
+if defined curlMeta (
+        for /F "tokens=1-4 delims=;" %%A in ("!curlMeta!") do (
+                for /F "tokens=2 delims==" %%p in ("%%A") do set "httpCode=%%p"
+                for /F "tokens=2 delims==" %%p in ("%%B") do set "downloadSize=%%p"
+                for /F "tokens=2 delims==" %%p in ("%%C") do set "remoteIp=%%p"
+                for /F "tokens=2 delims==" %%p in ("%%D") do set "errorMessage=%%p"
+        )
+)
+if not defined errorMessage if defined curlErrorLine set "errorMessage=!curlErrorLine!"
+for /F "tokens=1 delims=." %%p in ("!downloadSize!") do set "downloadSize=%%p"
+if not defined downloadSize set "downloadSize=0"
+set "statusShort=FAIL"
+set "statusText=Failed to complete ⚠️"
+if "!curlExit!"=="0" (
+        if !downloadSize! GEQ !tcp1620OkThresholdBytes! (
+                set "statusShort=OK"
+                set "statusText=Not detected ✅"
+        ) else (
+                set "statusShort=WARN"
+                set "statusText=Possibly detected ⚠️"
+        )
+) else if "!curlExit!"=="28" (
+        set "statusShort=DETECTED"
+        if "!httpCode!"=="000" (
+                set "statusText=Detected*❗️"
+        ) else (
+                set "statusText=Detected❗️"
+        )
+) else (
+        set "statusShort=FAIL"
+        set "statusText=Failed to complete ⚠️"
+)
+EndLocal && (
+        set "tcp1620Status=%statusText%"
+        set "tcp1620StatusShort=%statusShort%"
+        set "tcp1620HttpCode=%httpCode%"
+        set "tcp1620Bytes=%downloadSize%"
+        set "tcp1620ExitCode=%curlExit%"
+        set "tcp1620RemoteIp=%remoteIp%"
+        set "tcp1620Error=%errorMessage%"
+)
+exit /b
+
+:RunTcp1620Suite
+SetLocal EnableDelayedExpansion
+set successes=0
+set warnCount=0
+set detectedCount=0
+set failCount=0
+for /L %%t in (0,1,!testCaseIndex!) do (
+        set "caseId=!testId[%%t]!"
+        set "caseProvider=!testProvider[%%t]!"
+        set "caseUrl=!testUrl[%%t]!"
+        set "caseTimes=!testTimes[%%t]!"
+        if not defined caseTimes (set "caseTimes=1")
+        for /L %%x in (1,1,!caseTimes!) do (
+                call :RunSingleTcp1620Test "!caseId!" "!caseProvider!" "!caseUrl!" "%%x" "!caseTimes!"
+                set "label=!caseId!"
+                if !caseTimes! GTR 1 (set "label=!caseId!-%%x")
+                set "details=HTTP !tcp1620HttpCode!, bytes !tcp1620Bytes!, exit !tcp1620ExitCode!"
+                if defined tcp1620RemoteIp (set "details=!details!, ip !tcp1620RemoteIp!")
+                if defined tcp1620Error if not "!tcp1620Error!"=="" (set "details=!details!, err !tcp1620Error!")
+                call :WriteToConsoleAndToLog [!label!] !caseProvider!: !tcp1620Status! (!details!)
+                if /I "!tcp1620StatusShort!"=="OK" (
+                        set /A successes+=1
+                ) else if /I "!tcp1620StatusShort!"=="WARN" (
+                        set /A warnCount+=1
+                ) else if /I "!tcp1620StatusShort!"=="DETECTED" (
+                        set /A detectedCount+=1
+                ) else (
+                        set /A failCount+=1
+                )
+        )
+)
+set "summary=OK: !successes!, WARN: !warnCount!, Detected: !detectedCount!, Failed: !failCount!"
+EndLocal && (
+        set "%~1=%successes%"
+        set "tcp1620LastSummary=%summary%"
+)
 exit /b
 
 :CalculateHash
@@ -1272,30 +1019,6 @@ popd
 Endlocal && (set "%~2=%finalList%")
 exit /b
 
-:UserInputCheckListChoice
-SetLocal EnableDelayedExpansion
-set count=0
-
-set /A count+=1
-set checkListChoice=1!checkListChoice!
-echo Press [1] - proceed without a checklist
-echo.
-
-pushd "!checkListFolder!"
-for /F "usebackq delims=" %%i in (`dir /b /o:n`) do (
-	if !count! LEQ !choiceArrayLen! (
-		call set letter=%%choiceArray[!count!]%%
-		set /A count+=1
-		set "_checklist[!count!]=%%~fi"
-		echo Press [!letter!] - %%i
-		set checkListChoice=!checkListChoice!!letter!
-	)
-)
-popd
-if !count!==1 (
-	call :WriteToConsoleAndToLog WARNING: No checklists are found in "!checkListFolder!"
-	EndLocal && (set "%~1=")
-	exit /b
 )
 
 set /A count+=1
@@ -1315,28 +1038,6 @@ if !userChoice!==!count! (
 )
 Endlocal && (set "%~1=%choosedList%")
 exit /b
-
-:ResolveDomain
-SetLocal EnableDelayedExpansion
-set "resolvedIP="
-if "!dohEnabled!"=="false" if "!customCommonResolverEnabled!"=="true" (
-	set "domain=%~1"
-	set "domain=!domain:https://=!"
-	for /f "usebackq tokens=1,2* delims= " %%i in (`nslookup -type^=!resolveType! -timeout^=2 !domain! !resolver! 2^>^&1`) do (
-		if "%%i"=="Addresses:" (set "resolvedIP=%%j")
-		if "%%i"=="Address:" (
-			if not "%%j"=="!resolver!" (set "resolvedIP=%%j")
-		)
-	)
-	if defined resolvedIP (
-		call :WriteToConsoleAndToLog Resolved: !domain! as !resolvedIP!
-	) else (
-		call :WriteToConsoleAndToLog Domain !domain! not resolved
-	)
-)
-Endlocal && (set "%~2=%resolvedIP%")
-exit /b
-
 
 ::====================================================================
 
