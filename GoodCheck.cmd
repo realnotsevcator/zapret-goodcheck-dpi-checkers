@@ -48,7 +48,15 @@ set "curlThreadsNum=0"
 set "testCaseCount=-1"
 set "mostSuccessful=-1"
 
-call :LoadExternalOverrides
+rem Apply any overrides that were supplied through Config.cmd-style variables
+for %%V in (
+    outputMostSuccessfulStrategiesSeparately curlExtraKeys curlMinTimeout tcp1620TimeoutMs tcp1620OkThresholdBytes ^
+    tcp1620CustomId tcp1620CustomProvider tcp1620CustomUrl tcp1620CustomTimes fakeSNI fakeHexRaw fakeHexBytes ^
+    mostSuccessfulStrategiesFile strategiesFolder logsFolder curlFolder ^
+    checkListFolder netConnTestURL zapretName zapretExeName zapretFolderOverride zapretServiceName
+) do (
+    for /f "delims=" %%O in ("!_%%V!") do if not "%%O"=="" set "%%V=%%O"
+)
 call :CreateLog || goto FINISH
 call :Log "---------------------"
 call :Log "%SCRIPT_NAME% %SCRIPT_VERSION% starting up"
@@ -96,18 +104,6 @@ call :Log "Press any key to exit..."
 pause >NUL
 endlocal
 exit /b %exitCode%
-
-rem ============================================================================
-:LoadExternalOverrides
-for %%V in (
-    outputMostSuccessfulStrategiesSeparately curlExtraKeys curlMinTimeout tcp1620TimeoutMs tcp1620OkThresholdBytes \
-    tcp1620CustomId tcp1620CustomProvider tcp1620CustomUrl tcp1620CustomTimes fakeSNI fakeHexRaw fakeHexBytes \
-    mostSuccessfulStrategiesFile strategiesFolder logsFolder curlFolder \
-    checkListFolder netConnTestURL zapretName zapretExeName zapretFolderOverride zapretServiceName
-) do (
-    for /f "delims=" %%O in ("!_%%V!") do if not "%%O"=="" set "%%V=%%O"
-)
-exit /b 0
 
 rem ============================================================================
 :CreateLog
