@@ -435,6 +435,32 @@ call :WriteToConsoleAndToLog ""
 
 
 ::====================================================================
+::Validating parsed strategies
+set "strategiesCount=!strategiesNum!"
+if not defined strategiesCount (
+        set endedWithErrors=2
+        call :WriteToConsoleAndToLog ""
+        call :WriteToConsoleAndToLog ERROR: No strategies were parsed from "!strategiesList!".
+        goto EOF
+)
+set "_invalidStrategiesCount="
+for /F "delims=0123456789-" %%s in ("!strategiesCount!") do set "_invalidStrategiesCount=%%s"
+if defined _invalidStrategiesCount (
+        set endedWithErrors=2
+        call :WriteToConsoleAndToLog ""
+        call :WriteToConsoleAndToLog ERROR: Invalid strategy counter value "!strategiesCount!" for "!strategiesList!".
+        goto EOF
+)
+if !strategiesCount! LSS 0 (
+        set endedWithErrors=2
+        call :WriteToConsoleAndToLog ""
+        call :WriteToConsoleAndToLog ERROR: Strategy list "!strategiesList!" does not contain runnable entries.
+        goto EOF
+)
+set "_invalidStrategiesCount="
+
+
+::====================================================================
 ::Preparing TCP 16-20 DPI detection test suite
 cls
 
