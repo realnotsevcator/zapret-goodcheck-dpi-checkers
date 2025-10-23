@@ -26,11 +26,8 @@ set "tcp1620CustomTimes=1"
 set "fakeSNI=www.google.com"
 set "fakeHexRaw=1603030135010001310303424143facf5c983ac8ff20b819cfd634cbf5143c0005b2b8b142a6cd335012c220008969b6b387683dedb4114d466ca90be3212b2bde0c4f56261a9801"
 set "fakeHexBytes="
-set "payloadTLS=tls_earth_google_com.bin"
-set "payloadQuic=quic_ietf_www_google_com.bin"
 set "mostSuccessfulStrategiesFile=MostSuccessfulStrategies.txt"
 set "strategiesFolder=Strategies"
-set "payloadsFolder=Payloads"
 set "logsFolder=Logs"
 set "curlFolder=Curl"
 set "checkListFolder=Checklists"
@@ -64,22 +61,6 @@ if not exist "%strategiesDir%" (
     set "exitCode=2"
     goto FINISH
 )
-set "payloadsDir=%ROOT_DIR%%payloadsFolder%"
-if exist "%payloadsDir%" (
-    if defined payloadTLS (
-        set "payloadTLS=%payloadsDir%\%payloadTLS%"
-        if not exist "%payloadTLS%" set "payloadTLS="
-    )
-    if defined payloadQuic (
-        set "payloadQuic=%payloadsDir%\%payloadQuic%"
-        if not exist "%payloadQuic%" set "payloadQuic="
-    )
-) else (
-    call :Log "WARNING: payloads folder not found, payload substitutions disabled."
-    call :Log "         Create %payloadsFolder% and copy TLS/QUIC payloads (e.g. tls_earth_google_com.bin,"
-    call :Log "         quic_ietf_www_google_com.bin) from the Zapret distribution to enable them."
-)
-
 call :LocateCurl || (set "exitCode=2" & goto FINISH)
 call :VerifyCurlConnectivity || (set "exitCode=2" & goto FINISH)
 call :LocatePrograms
@@ -121,7 +102,7 @@ rem ============================================================================
 for %%V in (
     outputMostSuccessfulStrategiesSeparately curlExtraKeys curlMinTimeout tcp1620TimeoutMs tcp1620OkThresholdBytes \
     tcp1620CustomId tcp1620CustomProvider tcp1620CustomUrl tcp1620CustomTimes fakeSNI fakeHexRaw fakeHexBytes \
-    payloadTLS payloadQuic mostSuccessfulStrategiesFile strategiesFolder payloadsFolder logsFolder curlFolder \
+    mostSuccessfulStrategiesFile strategiesFolder logsFolder curlFolder \
     checkListFolder netConnTestURL zapretName zapretExeName zapretFolderOverride zapretServiceName
 ) do (
     for /f "delims=" %%O in ("!_%%V!") do if not "%%O"=="" set "%%V=%%O"
@@ -290,8 +271,6 @@ for /f "usebackq tokens=* delims=" %%L in ("%strategiesList%") do (
     if defined fakeSNI set "strategy=!strategy:FAKESNI=%fakeSNI%!"
     if defined fakeHexRaw set "strategy=!strategy:FAKEHEX=%fakeHexRaw%!"
     if defined fakeHexBytes set "strategy=!strategy:FAKEHEXBYTES=%fakeHexBytes%!"
-    if defined payloadTLS set "strategy=!strategy:PAYLOADTLS=%payloadTLS%!"
-    if defined payloadQuic set "strategy=!strategy:PAYLOADQUIC=%payloadQuic%!"
     set /a strategiesCount+=1
     set "strategies[!strategiesCount!]=!strategy!"
 :CONTINUE_STRAT
