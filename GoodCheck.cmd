@@ -58,7 +58,26 @@ call :Log "%SCRIPT_NAME% %SCRIPT_VERSION% starting up"
 call :Log "---------------------"
 
 call :RequireAdmin || (set "exitCode=2" & goto FINISH)
-call :EnsureFolders || (set "exitCode=2" & goto FINISH)
+set "strategiesDir=%ROOT_DIR%%strategiesFolder%"
+if not exist "%strategiesDir%" (
+    call :Log "ERROR: strategies folder not found at %strategiesDir%"
+    set "exitCode=2"
+    goto FINISH
+)
+set "payloadsDir=%ROOT_DIR%%payloadsFolder%"
+if exist "%payloadsDir%" (
+    if defined payloadTLS (
+        set "payloadTLS=%payloadsDir%\%payloadTLS%"
+        if not exist "%payloadTLS%" set "payloadTLS="
+    )
+    if defined payloadQuic (
+        set "payloadQuic=%payloadsDir%\%payloadQuic%"
+        if not exist "%payloadQuic%" set "payloadQuic="
+    )
+) else (
+    call :Log "WARNING: payloads folder not found, payload substitutions disabled."
+)
+
 call :LocateCurl || (set "exitCode=2" & goto FINISH)
 call :VerifyCurlConnectivity || (set "exitCode=2" & goto FINISH)
 call :LocatePrograms
@@ -151,29 +170,6 @@ if errorlevel 1 (
 call :Log "Administrator privileges confirmed."
 exit /b 0
 
-rem ============================================================================
-:EnsureFolders
-set "strategiesDir=%ROOT_DIR%%strategiesFolder%"
-if not exist "%strategiesDir%" (
-    call :Log "ERROR: strategies folder not found at %strategiesDir%"
-    exit /b 1
-)
-set "payloadsDir=%ROOT_DIR%%payloadsFolder%"
-if exist "%payloadsDir%" (
-    if defined payloadTLS (
-        set "payloadTLS=%payloadsDir%\%payloadTLS%"
-        if not exist "%payloadTLS%" set "payloadTLS="
-    )
-    if defined payloadQuic (
-        set "payloadQuic=%payloadsDir%\%payloadQuic%"
-        if not exist "%payloadQuic%" set "payloadQuic="
-    )
-) else (
-    call :Log "WARNING: payloads folder not found, payload substitutions disabled."
-)
-exit /b 0
-
-rem ============================================================================
 :LocateCurl
 set "curl="
 set "archDir=x86"
