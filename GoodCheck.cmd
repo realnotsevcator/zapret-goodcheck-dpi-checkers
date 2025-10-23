@@ -1135,7 +1135,7 @@ exit /b
 call :WriteToConsoleAndToLog ""
 
 if !endedWithErrors!==0 (
-	call :WriteToConsoleAndToLog Script ended without catched errors
+        call :WriteToConsoleAndToLog Script ended without detected errors
 )
 if !endedWithErrors!==1 (
 	call :WriteToConsoleAndToLog Script ended, but with some errors
@@ -1145,7 +1145,7 @@ if !endedWithErrors!==2 (
 )
 echo.
 echo.
-echo Press any button to exit...
+echo Press any key to exit...
 pause>NUL
 
 EndLocal
