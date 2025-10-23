@@ -171,7 +171,7 @@ call :WriteToConsoleAndToLog Checking privilegies...
 ::Net session method not working for some people
 rem net session >NUL 2>&1
 fsutil dirty query %systemdrive% >NUL
-if not !ERRORLEVEL!==0 (
+if not "!ERRORLEVEL!"=="0" (
 	set endedWithErrors=2
 	call :WriteToConsoleAndToLog
 	call :WriteToConsoleAndToLog ERROR: This script requires elevated privilegies
@@ -228,7 +228,7 @@ if not exist "!curl!" (
 	set "curl=curl.exe"
 )
 "!curl!" -V >NUL
-if not !ERRORLEVEL!==0 (
+if not "!ERRORLEVEL!"=="0" (
 	set endedWithErrors=2
 	call :WriteToConsoleAndToLog
 	call :WriteToConsoleAndToLog ERROR: Can't find Curl
@@ -246,10 +246,10 @@ call :WriteToConsoleAndToLog Checking up network connectivity...
 ::Apparently ICMP is blocked for some people, so we'll use curl here
 rem ping -n 1 -w 2000 "!netConnTestURL!">NUL
 "!curl!" -m !curlMinTimeout! -so NUL "!netConnTestURL!"
-if not !ERRORLEVEL!==0 (
+if not "!ERRORLEVEL!"=="0" (
 	call :WriteToConsoleAndToLog WARNING: Basic connectivity test failed, attempting insecure...
 	"!curl!" -m !curlMinTimeout! --insecure -so NUL "!netConnTestURL!"
-	if not !ERRORLEVEL!==0 (
+	if not "!ERRORLEVEL!"=="0" (
 		set endedWithErrors=2
 		call :WriteToConsoleAndToLog
 		call :WriteToConsoleAndToLog ERROR: No network connection. Make sure Curl aren't blocked by your firewall.
