@@ -5,7 +5,11 @@ chcp 1251
 title GoodCheck
 cls
 
-SetLocal EnableDelayedExpansion
+SetLocal EnableExtensions DisableDelayedExpansion
+
+set "goodCheckFolder=%~dp0"
+
+SetLocal EnableExtensions EnableDelayedExpansion
 
 
 ::==============================CONFIG================================
@@ -54,7 +58,6 @@ set "zapretServiceName=winws1"
 ::Consts
 set "version=v1.3.07"
 
-set "goodCheckFolder=%~dp0"
 
 (set nl=^
 %emptyline%
