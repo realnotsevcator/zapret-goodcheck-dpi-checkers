@@ -133,9 +133,17 @@ rem ============================================================================
 setlocal DisableDelayedExpansion
 set "message=%~1"
 if defined LOG_FILE (
-    >>"%LOG_FILE%" echo %message%
+    if "%~1"=="" (
+        >>"%LOG_FILE%" echo.
+    ) else (
+        >>"%LOG_FILE%" echo %message%
+    )
 )
-echo %message%
+if "%~1"=="" (
+    echo.
+) else (
+    echo %message%
+)
 endlocal & exit /b 0
 
 rem ============================================================================
