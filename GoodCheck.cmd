@@ -281,6 +281,12 @@ if not "!ERRORLEVEL!"=="0" (
 )
 
 ::Checking up network connectivity
+if "!curl!"=="" (
+        set endedWithErrors=2
+        call :WriteToConsoleAndToLog ""
+        call :WriteToConsoleAndToLog ERROR: Can't perform network connectivity check because Curl path is empty
+        goto EOF
+)
 call :WriteToConsoleAndToLog Checking up network connectivity...
 ::Apparently ICMP is blocked for some people, so we'll use curl here
 rem ping -n 1 -w 2000 "!netConnTestURL!">NUL
