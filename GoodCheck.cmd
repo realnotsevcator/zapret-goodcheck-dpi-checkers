@@ -285,17 +285,17 @@ rem ============================================================================
 set /a testCaseCount=-1
 set /a curlThreadsNum=0
 for %%T in (
-    "CF-01|Cloudflare|https://speed.cloudflare.com/__down?bytes=65536|1" \
-    "CF-02|Cloudflare|https://www.cloudflare.com/cdn-cgi/trace|1" \
-    "HZ-01|Hetzner|https://mirror.hetzner.com/100MB.bin|1" \
-    "OVH-01|OVH|https://proof.ovh.net/files/1Mb.dat|1" \
-    "OVH-02|OVH|https://ovh.sfx.ovh/10M.bin|1" \
-    "OR-01|Oracle|https://oracle.sfx.ovh/10M.bin|1" \
-    "AWS-01|AWS|https://tms.delta.com/delta/dl_anderson/Bootstrap.js|1" \
-    "AWS-02|AWS|https://corp.kaltura.com/wp-content/cache/min/1/wp-content/themes/airfleet/dist/styles/theme.css|1" \
-    "FST-01|Fastly|https://www.juniper.net/content/dam/www/assets/images/diy/DIY_th.jpg/jcr:content/renditions/600x600.jpeg|1" \
-    "FST-02|Fastly|https://www.graco.com/etc.clientlibs/clientlib-site/resources/fonts/lato/Lato-Regular.woff2|1" \
-    "AKM-01|Akamai|https://www.lg.com/lg5-common-gp/library/jquery.min.js|1" \
+    "CF-01|Cloudflare|https://speed.cloudflare.com/__down?bytes=65536|1"
+    "CF-02|Cloudflare|https://www.cloudflare.com/cdn-cgi/trace|1"
+    "HZ-01|Hetzner|https://mirror.hetzner.com/100MB.bin|1"
+    "OVH-01|OVH|https://proof.ovh.net/files/1Mb.dat|1"
+    "OVH-02|OVH|https://ovh.sfx.ovh/10M.bin|1"
+    "OR-01|Oracle|https://oracle.sfx.ovh/10M.bin|1"
+    "AWS-01|AWS|https://tms.delta.com/delta/dl_anderson/Bootstrap.js|1"
+    "AWS-02|AWS|https://corp.kaltura.com/wp-content/cache/min/1/wp-content/themes/airfleet/dist/styles/theme.css|1"
+    "FST-01|Fastly|https://www.juniper.net/content/dam/www/assets/images/diy/DIY_th.jpg/jcr:content/renditions/600x600.jpeg|1"
+    "FST-02|Fastly|https://www.graco.com/etc.clientlibs/clientlib-site/resources/fonts/lato/Lato-Regular.woff2|1"
+    "AKM-01|Akamai|https://www.lg.com/lg5-common-gp/library/jquery.min.js|1"
     "AKM-02|Akamai|https://media-assets.stryker.com/is/image/stryker/gateway_1?$max_width_1410$|1"
 ) do (
     set "entry=%%~T"
