@@ -185,7 +185,13 @@ if not defined curl (
     exit /b 1
 )
 for /f "usebackq tokens=*" %%V in (`"%curl%" -V 2^>NUL`) do (
-    call :Log "curl: %%V"
+    set "line=%%V"
+    setlocal EnableDelayedExpansion
+    set "safeLine=!line:^=^^!"
+    set "safeLine=!safeLine:^(=^(!"
+    set "safeLine=!safeLine:^)=^)!"
+    call :Log "curl: !safeLine!"
+    endlocal
 )
 exit /b 0
 
