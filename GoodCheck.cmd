@@ -76,6 +76,8 @@ if exist "%payloadsDir%" (
     )
 ) else (
     call :Log "WARNING: payloads folder not found, payload substitutions disabled."
+    call :Log "         Create %payloadsFolder% and copy TLS/QUIC payloads (e.g. tls_earth_google_com.bin,"
+    call :Log "         quic_ietf_www_google_com.bin) from the Zapret distribution to enable them."
 )
 
 call :LocateCurl || (set "exitCode=2" & goto FINISH)
