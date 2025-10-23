@@ -123,9 +123,9 @@ if not exist "!logFile!" (
 	echo Log file "!logFile!" successfully created
 )
 
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog ---------------------
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 
 ::====================================================================
@@ -153,9 +153,9 @@ call :OverrideStringParam "!_tcp1620CustomTimes!" tcp1620CustomTimes
 call :OverrideBooleanParam "!_outputMostSuccessfulStrategiesSeparately!" outputMostSuccessfulStrategiesSeparately
 call :OverrideStringParam "!_mostSuccessfulStrategiesFile!" mostSuccessfulStrategiesFile
 
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog ---------------------
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 
 ::====================================================================
@@ -173,9 +173,9 @@ rem net session >NUL 2>&1
 fsutil dirty query %systemdrive% >NUL
 if not "!ERRORLEVEL!"=="0" (
 	set endedWithErrors=2
-	call :WriteToConsoleAndToLog
+	call :WriteToConsoleAndToLog ""
 	call :WriteToConsoleAndToLog ERROR: This script requires elevated privilegies
-	call :WriteToConsoleAndToLog
+	call :WriteToConsoleAndToLog ""
 	call :WriteToConsoleAndToLog You need to right click on "%~n0%~x0" and choose "Run as administrator"
 	goto EOF
 )
@@ -193,7 +193,7 @@ call :WriteToConsoleAndToLog Checking up if strategies folder do exist...
 set "strategiesFolder=!goodCheckFolder!!strategiesFolder!\"
 if not exist "!strategiesFolder!" (
 	set endedWithErrors=2
-	call :WriteToConsoleAndToLog
+	call :WriteToConsoleAndToLog ""
 	call :WriteToConsoleAndToLog ERROR: Can't find strategies folder
 	goto EOF
 )
@@ -257,9 +257,9 @@ if not defined curl (
 )
 if not defined curl (
         set endedWithErrors=2
-        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog ""
         call :WriteToConsoleAndToLog ERROR: Can't find Curl
-        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog ""
         call :WriteToConsoleAndToLog Download it at https://curl.se/ and put the content of /bin/ folder next to this script
         goto EOF
 )
@@ -269,9 +269,9 @@ call :WriteToConsoleAndToLog Curl executable: "!curl!"
 "!curl!" -V >NUL
 if not "!ERRORLEVEL!"=="0" (
         set endedWithErrors=2
-        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog ""
         call :WriteToConsoleAndToLog ERROR: Can't start Curl. Please verify that it works from command line.
-        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog ""
         call :WriteToConsoleAndToLog Download it at https://curl.se/ and put the content of /bin/ folder next to this script
         goto EOF
 ) else (
@@ -290,17 +290,17 @@ if not "!ERRORLEVEL!"=="0" (
 	"!curl!" -m !curlMinTimeout! --insecure -so NUL "!netConnTestURL!"
 	if not "!ERRORLEVEL!"=="0" (
 		set endedWithErrors=2
-		call :WriteToConsoleAndToLog
+		call :WriteToConsoleAndToLog ""
 		call :WriteToConsoleAndToLog ERROR: No network connection. Make sure Curl aren't blocked by your firewall.
 		goto EOF
 	) else (
 		set endedWithErrors=1
 		set "curlExtraKeys=!curlExtraKeys! --insecure"
-		call :WriteToConsoleAndToLog
+		call :WriteToConsoleAndToLog ""
 		call :WriteToConsoleAndToLog WARNING: Network connection is present, but certificate verification is failed
-		call :WriteToConsoleAndToLog
+		call :WriteToConsoleAndToLog ""
 		call :WriteToConsoleAndToLog Either your firewall or antivirus are affecting connections, or ca-bundle is corrupted/unaccessible
-		call :WriteToConsoleAndToLog
+		call :WriteToConsoleAndToLog ""
 		echo Press any button to continue without certificate verifications...
 		pause>NUL
 	)
@@ -337,9 +337,9 @@ if not defined zapretExeFullpath (
 	)
 )
 
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog ---------------------
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 
 ::====================================================================
@@ -372,7 +372,7 @@ choice /C !choiceTest! /CS >NUL
 set testWith=!ERRORLEVEL!
 
 if !testWith!==2 (
-        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog ""
         call :WriteToConsoleAndToLog Cancelling...
         goto EOF
 )
@@ -393,18 +393,18 @@ if !testWith!==1 (
         )
 )
 
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog Proceeding with "!programName!" and "!strategiesList!" strategy list...
 
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog -------------------------------
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 
 ::====================================================================
 ::Converting strategies list into an array
 call :WriteToConsoleAndToLog Parsing strategy list...
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 set strategiesNum=-3
 for /F "usebackq tokens=* eol=/" %%i in ("!strategiesList!") do (
@@ -417,7 +417,7 @@ for /F "usebackq tokens=* eol=/" %%i in ("!strategiesList!") do (
 			)
 			if "%%j"=="_strategyExtraKeys" (
 				call :WriteToConsoleAndToLog Strategy extra keys found: %%k
-				call :WriteToConsoleAndToLog
+				call :WriteToConsoleAndToLog ""
 				set "strategyExtraKeys=%%k"
 			)
 		)
@@ -429,9 +429,9 @@ for /F "usebackq tokens=* eol=/" %%i in ("!strategiesList!") do (
 	)
 )
 
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog -------------------------------
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 
 ::====================================================================
@@ -451,7 +451,7 @@ echo Press [0] to exit
 choice /c 40 /CS >NUL
 set _choice=!ERRORLEVEL!
 if !_choice!==2 (
-        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog ""
         call :WriteToConsoleAndToLog Cancelling...
         goto EOF
 )
@@ -470,7 +470,7 @@ set /A tcp1620CustomTimes+=0
 if !tcp1620CustomTimes! LEQ 0 (set tcp1620CustomTimes=1)
 
 call :WriteToConsoleAndToLog Preparing TCP 16-20 DPI detection test suite...
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 set testCaseIndex=-1
 for %%T in (
@@ -532,7 +532,7 @@ for /L %%i in (0,1,!testCaseIndex!) do (
 
 if  !curlThreadsNum!==0 (
         set endedWithErrors=2
-        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog ""
         call :WriteToConsoleAndToLog ERROR: Nothing to check
         goto EOF
 )
@@ -540,9 +540,9 @@ if  !curlThreadsNum!==0 (
 set /A curlParallelRequestTimeout=tcp1620TimeoutSec
 if !curlParallelRequestTimeout! LEQ 0 (set curlParallelRequestTimeout=1)
 
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog Total: !curlThreadsNum! tests     Timeout per test: !tcp1620TimeoutMs! ms ^(~!curlParallelRequestTimeout! s^)     Threshold: !tcp1620OkThresholdBytes! bytes
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 ::====================================================================
 ::Choosing how many passes to do
@@ -590,11 +590,11 @@ if !_choice!==2 (
 	goto USERCHOICENUMBEROFPASSES
 )
 if !_choice!==3 (
-	call :WriteToConsoleAndToLog
+	call :WriteToConsoleAndToLog ""
 	call :WriteToConsoleAndToLog Proceeding with !numberOfPasses! passes...
 )
 if !_choice!==4 (
-	call :WriteToConsoleAndToLog
+	call :WriteToConsoleAndToLog ""
 	call :WriteToConsoleAndToLog Cancelling...
 	goto EOF
 )
@@ -602,9 +602,9 @@ if !_choice!==4 (
 
 call :WriteToLog Estimated time for a test: !estimatedMinutes! minutes !estimatedSeconds! seconds
 
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog -------------------------------
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 
 ::====================================================================
@@ -615,9 +615,9 @@ call :PurgeService "!zapretServiceName!"
 
 call :PurgeWinDivert
 
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog -------------------------------
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 
 ::====================================================================
@@ -668,7 +668,7 @@ for /L %%i in (0,1,!strategiesNum!) do (
 		)
 
 		call :WriteToConsoleAndToLog Successes - Pass %%z: !successes!/!curlThreadsNum! ^(!tcp1620LastSummary!^)
-		call :WriteToConsoleAndToLog
+		call :WriteToConsoleAndToLog ""
 	)	
 		
 	::Writing to a variable for future use
@@ -684,9 +684,9 @@ for /L %%i in (0,1,!strategiesNum!) do (
 
 title GoodCheck !version! - Completed
 
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog -------------------------------
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 
 ::====================================================================
@@ -705,7 +705,7 @@ for /L %%i in (0,1,!curlThreadsNum!) do (
 				)
 			)
 		)
-		call :WriteToConsoleAndToLog
+		call :WriteToConsoleAndToLog ""
 	)
 )
 ::Output most successful strategies separately
@@ -730,7 +730,7 @@ if "!outputMostSuccessfulStrategiesSeparately!"=="true" (
 )
 
 call :WriteToConsoleAndToLog -------------------------------
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 echo -------------------------------
 echo.
@@ -772,7 +772,11 @@ exit /b
 
 :WriteToConsoleAndToLog
 SetLocal EnableDelayedExpansion
-set "message=%*"
+if "%~1"=="" (
+        set "message="
+) else (
+        set "message=%*"
+)
 if not defined message (
         echo.
         if defined logFile (
@@ -1096,7 +1100,7 @@ exit /b
 ::====================================================================
 
 :EOF
-call :WriteToConsoleAndToLog
+call :WriteToConsoleAndToLog ""
 
 if !endedWithErrors!==0 (
 	call :WriteToConsoleAndToLog Script ended without catched errors
