@@ -116,12 +116,15 @@ if not exist "%logsDir%" (
         exit /b 1
     )
 )
-for /f "tokens=1-3 delims=.:/ " %%a in ("%date% %time%") do set "ts=%%a-%%b-%%c"
-set "ts=%ts::=-%"
-set "ts=%ts: =0%"
-set "logName=Log_%SCRIPT_NAME%_%ts%.txt"
-set "logPath=%logsDir%\%logName%"
->"%logPath%" echo %SCRIPT_NAME% %SCRIPT_VERSION% log
+    set "ts=%date%_%time%"
+    set "ts=!ts::=-!"
+    set "ts=!ts:/=-!"
+    set "ts=!ts:.=-!"
+    set "ts=!ts:,=-!"
+    set "ts=!ts: =0!"
+    set "logName=Log_%SCRIPT_NAME%_!ts!.txt"
+    set "logPath=!logsDir!\!logName!"
+    >"!logPath!" echo %SCRIPT_NAME% %SCRIPT_VERSION% log
 if errorlevel 1 (
     echo ERROR: cannot create log file "%logPath%"
     exit /b 1
