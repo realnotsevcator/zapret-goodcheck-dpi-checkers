@@ -124,7 +124,7 @@ if not exist "!logFile!" (
 )
 
 call :WriteToConsoleAndToLog ""
-call :WriteToConsoleAndToLog ---------------------
+call :WriteToConsoleAndToLog "---------------------"
 call :WriteToConsoleAndToLog ""
 
 
@@ -154,7 +154,7 @@ call :OverrideBooleanParam "!_outputMostSuccessfulStrategiesSeparately!" outputM
 call :OverrideStringParam "!_mostSuccessfulStrategiesFile!" mostSuccessfulStrategiesFile
 
 call :WriteToConsoleAndToLog ""
-call :WriteToConsoleAndToLog ---------------------
+call :WriteToConsoleAndToLog "---------------------"
 call :WriteToConsoleAndToLog ""
 
 
@@ -275,9 +275,9 @@ if not "!ERRORLEVEL!"=="0" (
         call :WriteToConsoleAndToLog Download it at https://curl.se/ and put the content of /bin/ folder next to this script
         goto EOF
 ) else (
-        call :WriteToConsoleAndToLog -----
+        call :WriteToConsoleAndToLog "-----"
         for /F "usebackq tokens=* delims=" %%i in (`"!curl!" -V`) do (call :WriteToConsoleAndToLog %%i)
-        call :WriteToConsoleAndToLog -----
+        call :WriteToConsoleAndToLog "-----"
 )
 
 ::Checking up network connectivity
@@ -338,7 +338,7 @@ if not defined zapretExeFullpath (
 )
 
 call :WriteToConsoleAndToLog ""
-call :WriteToConsoleAndToLog ---------------------
+call :WriteToConsoleAndToLog "---------------------"
 call :WriteToConsoleAndToLog ""
 
 
@@ -397,7 +397,7 @@ call :WriteToConsoleAndToLog ""
 call :WriteToConsoleAndToLog Proceeding with "!programName!" and "!strategiesList!" strategy list...
 
 call :WriteToConsoleAndToLog ""
-call :WriteToConsoleAndToLog -------------------------------
+call :WriteToConsoleAndToLog "-------------------------------"
 call :WriteToConsoleAndToLog ""
 
 
@@ -430,7 +430,7 @@ for /F "usebackq tokens=* eol=/" %%i in ("!strategiesList!") do (
 )
 
 call :WriteToConsoleAndToLog ""
-call :WriteToConsoleAndToLog -------------------------------
+call :WriteToConsoleAndToLog "-------------------------------"
 call :WriteToConsoleAndToLog ""
 
 
@@ -629,7 +629,7 @@ if !_choice!==4 (
 call :WriteToLog Estimated time for a test: !estimatedMinutes! minutes !estimatedSeconds! seconds
 
 call :WriteToConsoleAndToLog ""
-call :WriteToConsoleAndToLog -------------------------------
+call :WriteToConsoleAndToLog "-------------------------------"
 call :WriteToConsoleAndToLog ""
 
 
@@ -642,7 +642,7 @@ call :PurgeService "!zapretServiceName!"
 call :PurgeWinDivert
 
 call :WriteToConsoleAndToLog ""
-call :WriteToConsoleAndToLog -------------------------------
+call :WriteToConsoleAndToLog "-------------------------------"
 call :WriteToConsoleAndToLog ""
 
 
@@ -711,7 +711,7 @@ for /L %%i in (0,1,!strategiesNum!) do (
 title GoodCheck !version! - Completed
 
 call :WriteToConsoleAndToLog ""
-call :WriteToConsoleAndToLog -------------------------------
+call :WriteToConsoleAndToLog "-------------------------------"
 call :WriteToConsoleAndToLog ""
 
 
@@ -755,7 +755,7 @@ if "!outputMostSuccessfulStrategiesSeparately!"=="true" (
 	)
 )
 
-call :WriteToConsoleAndToLog -------------------------------
+call :WriteToConsoleAndToLog "-------------------------------"
 call :WriteToConsoleAndToLog ""
 
 echo -------------------------------
@@ -767,7 +767,7 @@ if "!outputMostSuccessfulStrategiesSeparately!"=="true" (
 )
 echo.
 
-call :WriteToConsoleAndToLog -------------------------------
+call :WriteToConsoleAndToLog "-------------------------------"
 
 goto EOF
 
