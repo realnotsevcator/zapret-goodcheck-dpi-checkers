@@ -216,29 +216,68 @@ if defined PROCESSOR_ARCHITEW6432 (set "processorSubFolder=x86_64")
 
 ::Checking up that curl do exist
 call :WriteToConsoleAndToLog Checking up if Curl do exist...
+set "curl="
 if defined curlFolder (
-	set "curl=!goodCheckFolder!!curlFolder!\!processorSubFolder!\curl.exe"
-        if not exist "!curl!" (
+        set "curlCandidate=!goodCheckFolder!!curlFolder!\!processorSubFolder!\curl.exe"
+        if exist "!curlCandidate!" (
+                set "curl=!curlCandidate!"
+        ) else (
                 call :WriteToConsoleAndToLog WARNING: Can't find Curl in it's folder...
-                set "curl=!goodCheckFolder!curl.exe"
+                set "curlCandidate=!goodCheckFolder!!curlFolder!\curl.exe"
+                if exist "!curlCandidate!" (
+                        set "curl=!curlCandidate!"
+                )
         )
 )
-if not exist "!curl!" (
-	call :WriteToConsoleAndToLog WARNING: Can't find Curl in script folder...
-	set "curl=curl.exe"
+if not defined curl (
+        set "curlCandidate=!goodCheckFolder!curl.exe"
+        if exist "!curlCandidate!" (
+                set "curl=!curlCandidate!"
+        ) else (
+                call :WriteToConsoleAndToLog WARNING: Can't find Curl in script folder...
+        )
 )
+if not defined curl (
+        for %%i in ("%SystemRoot%\System32\curl.exe" "%SystemRoot%\SysWOW64\curl.exe") do (
+                if not defined curl if exist "%%~fi" set "curl=%%~fi"
+        )
+)
+if not defined curl (
+        set "whereCmd="
+        if exist "%SystemRoot%\System32\where.exe" (
+                set "whereCmd=%SystemRoot%\System32\where.exe"
+        ) else if exist "%SystemRoot%\SysWOW64\where.exe" (
+                set "whereCmd=%SystemRoot%\SysWOW64\where.exe"
+        )
+        if defined whereCmd (
+                for /F "usebackq delims=" %%i in (`"!whereCmd!" curl.exe 2^>NUL`) do (
+                        if not defined curl set "curl=%%~fi"
+                )
+        )
+)
+if not defined curl (
+        set endedWithErrors=2
+        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog ERROR: Can't find Curl
+        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog Download it at https://curl.se/ and put the content of /bin/ folder next to this script
+        goto EOF
+)
+set "curlCandidate="
+set "whereCmd="
+call :WriteToConsoleAndToLog Curl executable: "!curl!"
 "!curl!" -V >NUL
 if not "!ERRORLEVEL!"=="0" (
-	set endedWithErrors=2
-	call :WriteToConsoleAndToLog
-	call :WriteToConsoleAndToLog ERROR: Can't find Curl
-	call :WriteToConsoleAndToLog
-	call :WriteToConsoleAndToLog Download it at https://curl.se/ and put the content of /bin/ folder next to this script
-	goto EOF
+        set endedWithErrors=2
+        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog ERROR: Can't start Curl. Please verify that it works from command line.
+        call :WriteToConsoleAndToLog
+        call :WriteToConsoleAndToLog Download it at https://curl.se/ and put the content of /bin/ folder next to this script
+        goto EOF
 ) else (
-	call :WriteToConsoleAndToLog -----
-	for /F "usebackq tokens=* delims=" %%i in (`"!curl!" -V`) do (call :WriteToConsoleAndToLog %%i)
-	call :WriteToConsoleAndToLog -----
+        call :WriteToConsoleAndToLog -----
+        for /F "usebackq tokens=* delims=" %%i in (`"!curl!" -V`) do (call :WriteToConsoleAndToLog %%i)
+        call :WriteToConsoleAndToLog -----
 )
 
 ::Checking up network connectivity
