@@ -772,7 +772,11 @@ exit /b
 
 :WriteToConsoleAndToLog
 SetLocal EnableDelayedExpansion
-set "message=%*"
+if "%~1"=="" (
+        set "message="
+) else (
+        set "message=%*"
+)
 if not defined message (
         echo.
         if defined logFile (
