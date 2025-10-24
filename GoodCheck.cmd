@@ -234,13 +234,17 @@ rem ============================================================================
 setlocal EnableDelayedExpansion
 set "strategiesDir=%ROOT_DIR%%strategiesFolder%"
 set "index=-1"
-for %%F in ("%strategiesDir%\*.txt") do (
+for /r "%strategiesDir%" %%F in (*.txt) do (
     set /a index+=1
     set "item[!index!]=%%~fF"
-    call :Log "[!index!] %%~nF"
+    set "display=%%~fF"
+    set "display=!display:!strategiesDir!\=!"
+    if "!display!"=="%%~fF" set "display=%%~nF"
+    if defined display if "!display:~0,1!"=="\" set "display=!display:~1!"
+    call :Log "[!index!] !display!"
 )
 if !index! LSS 0 (
-    call :Log "ERROR: no strategy files in %strategiesDir%."
+    call :Log "ERROR: no strategy files found under !strategiesDir!."
     exit /b 1
 )
 :ASK_STRATEGY
