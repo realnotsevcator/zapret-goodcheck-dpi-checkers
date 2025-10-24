@@ -186,7 +186,10 @@ if not defined curl (
     call :Log "ERROR: curl executable not found."
     exit /b 1
 )
-for /f "usebackq delims=" %%L in (`"%curl%" -V 2^>NUL`) do call :Log "curl: %%L"
+for /f "usebackq delims=" %%L in (`"%curl%" -V 2^>NUL`) do (
+    if defined LOG_FILE >>"%LOG_FILE%" echo(curl: %%L
+    echo(curl: %%L
+)
 exit /b 0
 
 rem ============================================================================
