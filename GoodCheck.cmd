@@ -199,8 +199,11 @@ if errorlevel 1 (
     call :Log "WARNING: HTTPS connectivity failed, retrying with --insecure."
     "%curl%" --silent --show-error --max-time %curlMinTimeout% --insecure --output NUL "%netConnTestURL%" >NUL 2>&1
     if errorlevel 1 (
-        call :Log "ERROR: network connectivity test failed."
-        exit /b 1
+        call :Log "WARNING: network connectivity test failed; continuing without pre-check."
+        call :Log "WARNING: HTTP checks may report DETECTED/FAIL until connectivity issues are resolved."
+        set "NETWORK_WARNING=1"
+        if !exitCode! LSS 1 set "exitCode=1"
+        exit /b 0
     )
     set "curlExtraKeys=%curlExtraKeys% --insecure"
 )
