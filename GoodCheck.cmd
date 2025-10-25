@@ -241,6 +241,8 @@ for /r "%strategiesDir%" %%F in (*.txt) do (
     set "display=!display:!strategiesDir!\=!"
     if "!display!"=="%%~fF" set "display=%%~nF"
     if defined display if "!display:~0,1!"=="\" set "display=!display:~1!"
+    set "label[!index!]=!display!"
+    set "name[!index!]=%%~nxF"
     call :Log "[!index!] !display!"
 )
 if !index! LSS 0 (
@@ -248,12 +250,52 @@ if !index! LSS 0 (
     exit /b 1
 )
 :ASK_STRATEGY
-set /p "selection=Select strategy list (number or X to cancel): "
+set "chosen="
+set "nonDigit="
+set /p "selection=Select strategy list (number, name or X to cancel): "
 if /I "!selection!"=="X" exit /b 1
 if not defined selection goto ASK_STRATEGY
-for /f "delims=0123456789" %%D in ("!selection!") do goto ASK_STRATEGY
-if !selection! GTR !index! goto ASK_STRATEGY
-set "chosen=!item[!selection!]!"
+for /f "delims=0123456789" %%D in ("!selection!") do set "nonDigit=1"
+if not defined nonDigit (
+    if !selection! GEQ 0 if !selection! LEQ !index! (
+        set "chosen=!item[!selection!]!"
+    )
+)
+if not defined chosen (
+    for /L %%I in (0,1,!index!) do (
+        if /I "!selection!"=="!label[%%I]!" (
+            set "chosen=!item[%%I]!"
+            goto FOUND_STRATEGY
+        )
+    )
+)
+if not defined chosen (
+    for /L %%I in (0,1,!index!) do (
+        if /I "!selection!"=="!name[%%I]!" (
+            set "chosen=!item[%%I]!"
+            goto FOUND_STRATEGY
+        )
+    )
+)
+if not defined chosen (
+    set "candidate=%strategiesDir%\!selection!"
+    if exist "!selection!" for %%P in ("!selection!") do set "chosen=%%~fP"
+    if not defined chosen if exist "!candidate!" for %%P in ("!candidate!") do set "chosen=%%~fP"
+)
+if not defined chosen (
+    call :Log "Invalid selection. Enter a number from 0 to !index! or a valid strategy path/name."
+    goto ASK_STRATEGY
+)
+
+:FOUND_STRATEGY
+for %%P in ("!chosen!") do (
+    set "chosen=%%~fP"
+    set "chosenExt=%%~xP"
+)
+if /I not "!chosenExt!"==".txt" (
+    call :Log "Selection must point to a .txt strategy file."
+    goto ASK_STRATEGY
+)
 call :Log "Selected strategy list: !chosen!"
 endlocal & set "strategiesList=%chosen%" & exit /b 0
 
