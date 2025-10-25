@@ -2,7 +2,29 @@
 /You can use PAYLOADTLS and PAYLOADQUIC for automatic substitution in the script
 /
 _strategyCurlExtraKeys#-4
-_strategyExtraKeys#--wf-l3=ipv4 --wf-tcp=443
+_strategyExtraKeys#--wf-l3=ipv4
+/
+/_Port 80 HTTP strategies (combined with HTTPS entries below)
+_strategyPort80#--hostlist="%LISTDIR%\\discord.txt" --ipset="%LISTDIR%\\ipset-cloudflare.txt" --dpi-desync=fake,split2 --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig
+_strategyPort80#--hostlist="%LISTDIR%\\list-general.txt" --dpi-desync=fake,split2 --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig
+_strategyPort80#--ipset="%LISTDIR%\\ipset-all.txt" --dpi-desync=fake,split2 --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig
+_strategyPort80#--hostlist="%LISTDIR%\\list-general.txt" --dpi-desync=fake,multisplit --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig
+_strategyPort80#--ipset="%LISTDIR%\\ipset-all.txt" --dpi-desync=fake,multisplit --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig
+_strategyPort80#--dpi-desync=fake,split2 --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig
+_strategyPort80#--hostlist="%LISTDIR%\\discord.txt" --dpi-desync=fake,split2 --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig
+_strategyPort80#--dpi-desync=fake,fakedsplit --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig
+_strategyPort80#--hostlist="%LISTDIR%\\list-general.txt" --dpi-desync=fake,fakedsplit --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig
+_strategyPort80#--hostlist="%LISTDIR%\\russia-blacklist.txt" --dpi-desync=fake,multisplit --dpi-desync-ttl=0 --dpi-desync-fooling=md5sig,badsum
+_strategyPort80#--hostlist="%LISTDIR%\\russia-blacklist.txt" --dpi-desync=fake,multisplit --dpi-desync-split-pos=method+2 --dpi-desync-fooling=md5sig
+_strategyPort80#--hostlist="%LISTDIR%\\mycdnlist.txt" --dpi-desync=fakeddisorder --dpi-desync-split-pos=2,midsld --dpi-desync-fakedsplit-pattern="%BIN%\\tls_clienthello_1.bin" --dpi-desync-fooling=badseq
+_strategyPort80#--dpi-desync=fake,multisplit --dpi-desync-split-seqovl=1 --dpi-desync-split-pos=sld+1 --dpi-desync-fooling=badseq
+_strategyPort80#--hostlist="%LISTDIR%\\mycdnlist.txt" --hostlist="%LISTDIR%\\russia-blacklist.txt" --hostlist="%LISTDIR%\\other.txt" --dpi-desync=fake,multisplit --dpi-desync-split-seqovl=2 --dpi-desync-split-pos=sld+1 --dpi-desync-fake-http=0x0F0F0F0F --dpi-desync-fooling=md5sig --dup=2 --dup-fooling=md5sig --dup-cutoff=n3
+_strategyPort80#--hostlist="%LISTDIR%\\other.txt" --hostlist-exclude="%LISTDIR%\\netrogat.txt" --dpi-desync=fake,multisplit --dpi-desync-split-seqovl=2 --dpi-desync-split-pos=host+1 --dpi-desync-fake-http=0x0F0F0F0F --dpi-desync-fooling=md5sig
+_strategyPort80#--hostlist-domains=cloudfront.net,amazon.com,amazonaws.com,awsstatic.com,epicgames.com --dpi-desync=fake,multisplit --dpi-desync-split-seqovl=2 --dpi-desync-split-pos=sld+1 --dpi-desync-fake-http="%BIN%\\http_fake_MS.bin" --dpi-desync-fooling=md5sig --dup=2 --dup-fooling=md5sig --dup-cutoff=n3
+_strategyPort80#--ipset="%LISTDIR%\\cloudflare-ipset.txt" --ipset-exclude-ip=1.1.1.1,1.0.0.1,212.109.195.93,83.220.169.155,141.105.71.21,18.244.96.0/19,18.244.128.0/19 --dpi-desync=fake,multisplit --dpi-desync-split-seqovl=2 --dpi-desync-split-pos=sld+1 --dpi-desync-fake-http="%BIN%\\http_fake_MS.bin" --dpi-desync-fooling=md5sig --dup=2 --dup-fooling=md5sig --dup-cutoff=n3
+_strategyPort80#--filter-l3=ipv4 --hostlist-auto="autohostlist.txt" --hostlist-exclude="%LISTDIR%\\netrogat.txt" --dpi-desync=fake,multisplit --dpi-desync-split-seqovl=2 --dpi-desync-split-pos=host+1 --dpi-desync-fake-http=0x0E0E0F0E --dpi-desync-fooling=md5sig
+_strategyPort80#--filter-l3=ipv4 --hostlist="%LISTDIR%\\mycdnlist.txt" --hostlist="%LISTDIR%\\russia-blacklist.txt" --hostlist="%LISTDIR%\\myhostlist.txt" --dpi-desync=fake,multisplit --dpi-desync-split-seqovl=2 --dpi-desync-split-pos=sld+1 --dpi-desync-fake-http=0x0F0F0F0F --dpi-desync-fooling=md5sig --dup=2 --dup-fooling=md5sig --dup-cutoff=n3
+_strategyPort80#--filter-l3=ipv4 --hostlist="%LISTDIR%\\mycdnlist.txt" --hostlist="%LISTDIR%\\russia-blacklist.txt" --hostlist="%LISTDIR%\\myhostlist.txt" --dpi-desync=fake,multisplit --dpi-desync-split-seqovl=2 --dpi-desync-split-pos=sld+1 --dpi-desync-fake-http="%BIN%\\http_fake_MS.bin" --dpi-desync-fooling=md5sig --dup=2 --dup-fooling=md5sig --dup-cutoff=n3
 /
 --ipset=C:\searching\ipset-v4.txt --ipset=C:\searching\ipset-v6.txt --dpi-desync=syndata --dpi-desync-fake-syndata="C:\searching\fakes\tls_clienthello_4.bin" --dpi-desync-autottl
 --ipset=C:\searching\ipset-v4.txt --ipset=C:\searching\ipset-v6.txt --dpi-desync=multisplit --dpi-desync-split-seqovl=1 --dpi-desync-split-pos=midsld+1

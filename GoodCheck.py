@@ -177,17 +177,32 @@ def load_strategies(path: Path) -> Tuple[List[Strategy], List[str]]:
     """Read strategy definitions from ``path``.
 
     Returns a list of :class:`Strategy` objects and additional curl arguments
-    specified via ``_strategyCurlExtraKeys``.
+    specified via ``_strategyCurlExtraKeys``.  The loader now also understands
+    optional ``_strategyPort80`` and ``_strategyPort443`` directives that make
+    it possible to combine HTTP and HTTPS parameters into a single winws
+    invocation.
     """
 
-    strategies: List[Strategy] = []
     strategy_extra = ""
     strategy_curl_extra = ""
+    raw_entries: List[str] = []
+    port80_entries: List[str] = []
+    port443_entries: List[str] = []
+
+    base_dir = path.parent.resolve()
     replacements = {
         "FAKESNI": FAKE_SNI,
         "FAKEHEX": FAKE_HEX_RAW,
         "FAKEHEXBYTES": FAKE_HEX_BYTES,
+        "%LISTDIR%": os.environ.get("LISTDIR", str(base_dir)),
+        "%BIN%": os.environ.get("BIN", str(base_dir)),
     }
+
+    def apply_replacements(text: str) -> str:
+        for key, replacement in replacements.items():
+            if replacement:
+                text = text.replace(key, replacement)
+        return text.strip()
 
     with path.open("r", encoding="utf-8", errors="ignore") as handle:
         for line in handle:
@@ -195,19 +210,65 @@ def load_strategies(path: Path) -> Tuple[List[Strategy], List[str]]:
             if not stripped or stripped.startswith("/"):
                 continue
             directive, sep, value = stripped.partition("#")
-            if sep and directive.lower() == "_strategyextrakeys":
+            lower_directive = directive.lower()
+            if sep and lower_directive == "_strategyextrakeys":
                 strategy_extra = value.strip()
                 continue
-            if sep and directive.lower() == "_strategycurlextrakeys":
+            if sep and lower_directive == "_strategycurlextrakeys":
                 strategy_curl_extra = value.strip()
                 continue
+            if sep and lower_directive == "_strategyport80":
+                port80_entries.append(apply_replacements(value))
+                continue
+            if sep and lower_directive == "_strategyport443":
+                port443_entries.append(apply_replacements(value))
+                continue
 
-            command = f"{strategy_extra} {stripped}".strip()
-            for key, replacement in replacements.items():
-                if replacement:
-                    command = command.replace(key, replacement)
-            index = len(strategies) + 1
-            strategies.append(Strategy(index=index, text=command))
+            raw_entries.append(apply_replacements(stripped))
+
+    strategies: List[Strategy] = []
+    if port443_entries and raw_entries:
+        combined_entries = raw_entries + port443_entries
+    elif port443_entries:
+        combined_entries = port443_entries.copy()
+    else:
+        combined_entries = raw_entries.copy()
+
+    if port80_entries:
+        if not combined_entries:
+            raise ValueError(
+                "Для объединённых стратегий требуется хотя бы одна запись для порта 443."
+            )
+
+        index = 1
+        base_prefix = strategy_extra.strip()
+        for port80 in port80_entries:
+            port80 = port80.strip()
+            for port443 in combined_entries:
+                port443 = port443.strip()
+                parts: List[str] = []
+                if base_prefix:
+                    parts.append(base_prefix)
+                parts.append("--wf-tcp=80,443")
+                port80_segment = f"--filter-tcp=80 {port80}".strip()
+                port443_segment = f"--filter-tcp=443 {port443}".strip()
+                parts.append(port80_segment)
+                parts.append("--new")
+                parts.append(port443_segment)
+                text = " ".join(parts)
+                if "--filter-tcp=80" not in text or "--filter-tcp=443" not in text:
+                    raise ValueError(
+                        "Объединённая стратегия должна содержать параметры для портов 80 и 443."
+                    )
+                strategies.append(Strategy(index=index, text=" ".join(text.split())))
+                index += 1
+    else:
+        index = 1
+        for entry in raw_entries + port443_entries:
+            command = " ".join(part for part in (strategy_extra, entry) if part).strip()
+            if command:
+                strategies.append(Strategy(index=index, text=" ".join(command.split())))
+                index += 1
 
     if not strategies:
         raise ValueError("Файл стратегий не содержит данных.")
