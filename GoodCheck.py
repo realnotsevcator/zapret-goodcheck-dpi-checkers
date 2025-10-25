@@ -420,8 +420,14 @@ def start_winws(executable: Path, strategy: Strategy) -> subprocess.Popen:
     """Start winws.exe with the provided strategy."""
 
     arguments = [str(executable), *strategy.split_arguments()]
+    creationflags = 0
+    if platform.system() == "Windows":
+        # Launch winws.exe in a separate console window to mirror the
+        # behaviour of the original batch script.
+        creationflags = getattr(subprocess, "CREATE_NEW_CONSOLE", 0)
+
     try:
-        return subprocess.Popen(arguments)
+        return subprocess.Popen(arguments, creationflags=creationflags)
     except OSError as exc:
         raise RuntimeError(f"Не удалось запустить {executable.name}: {exc}") from exc
 
@@ -429,25 +435,30 @@ def start_winws(executable: Path, strategy: Strategy) -> subprocess.Popen:
 def terminate_winws(process: subprocess.Popen | None, executable: Path) -> None:
     """Terminate the winws process and attempt to kill remaining instances."""
 
-    if process is not None:
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                process.kill()
-
     if platform.system() == "Windows":
         exe_name = executable.name
         try:
             subprocess.run(
-                ["taskkill", "/F", "/IM", exe_name],
+                ["taskkill", "/F", "/T", "/IM", exe_name],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=False,
             )
         except OSError:
             pass
+
+    if process is not None and process.poll() is None:
+        if platform.system() == "Windows":
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+        else:
+            process.terminate()
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
 
 
 def check_network(curl_path: Path, curl_extra_args: List[str]) -> None:
