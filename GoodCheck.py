@@ -29,6 +29,7 @@ import shlex
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Sequence, Tuple
@@ -379,6 +380,7 @@ def run_curl(
     )
 
 
+
 def run_test_suite(
     curl_path: Path,
     curl_extra_args: Sequence[str],
@@ -386,35 +388,57 @@ def run_test_suite(
 ) -> Tuple[int, str]:
     """Execute all HTTP checks once and return (ok_count, summary_text)."""
 
-    ok = warn = detected = fail = 0
-
-    for test_id, provider, url, times in TEST_CASES:
+    tasks: List[Tuple[int, int, int, str, str, str]] = []
+    total_tasks = 0
+    for order, (test_id, provider, url, times) in enumerate(TEST_CASES):
         repeats = max(times, 1)
+        total_tasks += repeats
         for attempt in range(1, repeats + 1):
-            result = run_curl(
-                curl_path=curl_path,
-                extra_args=curl_extra_args,
-                url=append_cache_buster(url),
-                timeout_sec=timeout_sec,
-            )
-            if result.status.upper() == "OK":
-                ok += 1
-            elif result.status.upper() == "WARN":
-                warn += 1
-            elif result.status.upper() == "DETECTED":
-                detected += 1
-            else:
-                fail += 1
+            tasks.append((order, attempt, repeats, test_id, provider, url))
 
-            print(
-                f"Тест {test_id} ({provider}) #{attempt}/{repeats} - {result.status_text} "
-                f"(HTTP {result.http_code}, bytes {result.bytes_downloaded}, "
-                f"IP {result.remote_ip}, error {result.error_message})"
+    if total_tasks == 0:
+        return 0, "OK:0, Warn:0, Detected:0, Fail:0"
+
+    ok = warn = detected = fail = 0
+    results: List[Tuple[int, int, int, str, str, CurlResult]] = []
+
+    max_workers = max(1, min(8, total_tasks))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(
+                run_curl,
+                curl_path,
+                curl_extra_args,
+                append_cache_buster(url),
+                timeout_sec,
             )
+            for _, _, _, _, _, url in tasks
+        ]
+
+        for (order, attempt, repeats, test_id, provider, _), future in zip(tasks, futures):
+            result = future.result()
+            results.append((order, attempt, repeats, test_id, provider, result))
+
+    results.sort(key=lambda item: (item[0], item[1]))
+
+    for _, attempt, repeats, test_id, provider, result in results:
+        if result.status.upper() == "OK":
+            ok += 1
+        elif result.status.upper() == "WARN":
+            warn += 1
+        elif result.status.upper() == "DETECTED":
+            detected += 1
+        else:
+            fail += 1
+
+        print(
+            f"Тест {test_id} ({provider}) #{attempt}/{repeats} - {result.status_text} "
+            f"(HTTP {result.http_code}, bytes {result.bytes_downloaded}, "
+            f"IP {result.remote_ip}, error {result.error_message})"
+        )
 
     summary = f"OK:{ok}, Warn:{warn}, Detected:{detected}, Fail:{fail}"
     return ok, summary
-
 
 def start_winws(executable: Path, strategy: Strategy) -> subprocess.Popen:
     """Start winws.exe with the provided strategy."""
@@ -435,7 +459,8 @@ def start_winws(executable: Path, strategy: Strategy) -> subprocess.Popen:
 def terminate_winws(process: subprocess.Popen | None, executable: Path) -> None:
     """Terminate the winws process and attempt to kill remaining instances."""
 
-    if platform.system() == "Windows":
+    is_windows = platform.system() == "Windows"
+    if is_windows:
         exe_name = executable.name
         try:
             subprocess.run(
@@ -448,7 +473,7 @@ def terminate_winws(process: subprocess.Popen | None, executable: Path) -> None:
             pass
 
     if process is not None and process.poll() is None:
-        if platform.system() == "Windows":
+        if is_windows:
             try:
                 process.wait(timeout=3)
             except subprocess.TimeoutExpired:
@@ -459,6 +484,18 @@ def terminate_winws(process: subprocess.Popen | None, executable: Path) -> None:
                 process.wait(timeout=3)
             except subprocess.TimeoutExpired:
                 process.kill()
+
+    if is_windows:
+        try:
+            subprocess.run(
+                ["sc", "stop", "windivert"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        except OSError:
+            pass
+
 
 
 def check_network(curl_path: Path, curl_extra_args: List[str]) -> None:
