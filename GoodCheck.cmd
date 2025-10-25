@@ -308,8 +308,9 @@ if not defined strategiesList (
 set "strategiesCount=-1"
 set "strategyExtraKeys="
 set "strategyCurlExtraKeys="
-for /f "usebackq tokens=*" %%L in ("%strategiesList%") do (
-    set "line=%%L"
+for /f "usebackq delims=" %%L in ("%strategiesList%") do (
+    set "line="
+    set line=%%L
     if not defined line goto NEXT_STRAT
     if "!line!"=="" goto NEXT_STRAT
     if "!line:~0,1!"=="/" goto NEXT_STRAT
