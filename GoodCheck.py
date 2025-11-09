@@ -22,6 +22,7 @@ platform-agnostic so that it can be linted and tested on other systems.
 
 from __future__ import annotations
 
+import io
 import os
 import platform
 import random
@@ -31,8 +32,9 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import List, Sequence, Tuple
+from typing import Callable, List, Sequence, Tuple, TextIO
 
 # ---------------------------------------------------------------------------
 # Configuration constants that mirror GoodCheck.cmd defaults
@@ -114,6 +116,69 @@ class Strategy:
         if not text:
             return []
         return shlex.split(text, posix=False)
+
+
+@dataclass
+class StrategyOutcome:
+    """Aggregated results for a single strategy run."""
+
+    successes: int
+    strategy: Strategy
+    summary: str
+    providers: Tuple[str, ...]
+
+    @property
+    def provider_count(self) -> int:
+        return len(self.providers)
+
+
+class StdoutLogger(io.TextIOBase):
+    """Tee stdout stream that mirrors output to a log file."""
+
+    def __init__(self, original: TextIO, log_handle: TextIO):
+        self._original = original
+        self._log = log_handle
+
+    def write(self, s: str) -> int:  # type: ignore[override]
+        self._original.write(s)
+        self._log.write(s)
+        return len(s)
+
+    def flush(self) -> None:  # type: ignore[override]
+        self._original.flush()
+        self._log.flush()
+
+    def isatty(self) -> bool:  # type: ignore[override]
+        return self._original.isatty()
+
+    @property
+    def encoding(self) -> str | None:  # type: ignore[override]
+        return getattr(self._original, "encoding", None)
+
+
+def setup_file_logging(target_dir: Path) -> Tuple[Path, Callable[[], None]]:
+    """Create a log file and mirror stdout into it."""
+
+    timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    log_path = target_dir / f"Log-{timestamp}.txt"
+    log_file = log_path.open("w", encoding="utf-8")
+    original_stdout: TextIO = sys.stdout
+    tee = StdoutLogger(original_stdout, log_file)
+    sys.stdout = tee
+    restored = False
+
+    def restore() -> None:
+        nonlocal restored
+        if restored:
+            return
+        restored = True
+        try:
+            tee.flush()
+        finally:
+            sys.stdout = original_stdout
+            log_file.close()
+
+    return log_path, restore
 
 
 @dataclass
@@ -204,6 +269,9 @@ def load_strategies(path: Path) -> Tuple[List[Strategy], List[str]]:
                 text = text.replace(key, replacement)
         return text.strip()
 
+    def normalize(text: str) -> str:
+        return " ".join(text.split())
+
     with path.open("r", encoding="utf-8", errors="ignore") as handle:
         for line in handle:
             stripped = line.strip()
@@ -226,6 +294,24 @@ def load_strategies(path: Path) -> Tuple[List[Strategy], List[str]]:
 
             raw_entries.append(apply_replacements(stripped))
 
+    def ensure_argument(args: List[str], desired: str) -> bool:
+        """Ensure ``desired`` (or its variant) is present in ``args``."""
+
+        desired_lower = desired.lower()
+        key = desired_lower.split("=", 1)[0]
+        for index_pos, existing in enumerate(args):
+            existing_lower = existing.lower()
+            if existing_lower == desired_lower:
+                return False
+            if key and existing_lower.startswith(f"{key}="):
+                if existing_lower != desired_lower:
+                    args[index_pos] = desired
+                    return True
+                return False
+
+        args.append(desired)
+        return True
+
     strategies: List[Strategy] = []
     if port443_entries and raw_entries:
         combined_entries = raw_entries + port443_entries
@@ -234,14 +320,15 @@ def load_strategies(path: Path) -> Tuple[List[Strategy], List[str]]:
     else:
         combined_entries = raw_entries.copy()
 
+    base_prefix = strategy_extra.strip()
+    index = 1
+
     if port80_entries:
         if not combined_entries:
             raise ValueError(
                 "Для объединённых стратегий требуется хотя бы одна запись для порта 443."
             )
 
-        index = 1
-        base_prefix = strategy_extra.strip()
         for port80 in port80_entries:
             port80 = port80.strip()
             for port443 in combined_entries:
@@ -255,20 +342,60 @@ def load_strategies(path: Path) -> Tuple[List[Strategy], List[str]]:
                 parts.append(port80_segment)
                 parts.append("--new")
                 parts.append(port443_segment)
-                text = " ".join(parts)
+                text = normalize(" ".join(parts))
                 if "--filter-tcp=80" not in text or "--filter-tcp=443" not in text:
                     raise ValueError(
                         "Объединённая стратегия должна содержать параметры для портов 80 и 443."
                     )
-                strategies.append(Strategy(index=index, text=" ".join(text.split())))
+                strategies.append(Strategy(index=index, text=text))
                 index += 1
     else:
-        index = 1
         for entry in raw_entries + port443_entries:
-            command = " ".join(part for part in (strategy_extra, entry) if part).strip()
+            command = normalize(
+                " ".join(part for part in (strategy_extra, entry) if part).strip()
+            )
             if command:
-                strategies.append(Strategy(index=index, text=" ".join(command.split())))
+                strategies.append(Strategy(index=index, text=command))
                 index += 1
+
+    for port443 in port443_entries:
+        entry_text = port443.strip()
+        if not entry_text:
+            continue
+        entry_lower = entry_text.lower()
+        if "--wf-tcp" in entry_lower:
+            continue
+        parts: List[str] = []
+        if base_prefix:
+            parts.append(base_prefix)
+        parts.append("--wf-tcp=80,443")
+        if "--filter-tcp=443" in entry_lower:
+            parts.append(entry_text)
+        else:
+            parts.append(f"--filter-tcp=443 {entry_text}".strip())
+        command = normalize(" ".join(parts))
+        strategies.append(Strategy(index=index, text=command))
+        index += 1
+
+    original_strategies = list(strategies)
+    extra_argument_sets: Tuple[Tuple[str, ...], ...] = (
+        ("--dpi-desync-cutoff=n3",),
+        ("--dup=2", "--dup-cutoff=n3"),
+    )
+
+    for extra_args in extra_argument_sets:
+        for base in original_strategies:
+            base_arguments = split_arguments(base.text)
+            new_arguments = base_arguments.copy()
+            changed = False
+            for desired in extra_args:
+                if ensure_argument(new_arguments, desired):
+                    changed = True
+            if not changed:
+                continue
+            command = normalize(" ".join(new_arguments))
+            strategies.append(Strategy(index=index, text=command))
+            index += 1
 
     if not strategies:
         raise ValueError("Файл стратегий не содержит данных.")
@@ -446,7 +573,7 @@ def run_test_suite(
     curl_path: Path,
     curl_extra_args: Sequence[str],
     timeout_sec: int,
-) -> Tuple[int, str]:
+) -> Tuple[int, str, Tuple[str, ...]]:
     """Execute all HTTP checks once and return (ok_count, summary_text)."""
 
     tasks: List[Tuple[int, int, int, str, str, str]] = []
@@ -458,10 +585,11 @@ def run_test_suite(
             tasks.append((order, attempt, repeats, test_id, provider, url))
 
     if total_tasks == 0:
-        return 0, "OK:0, Warn:0, Detected:0, Fail:0"
+        return 0, "OK:0, Warn:0, Detected:0, Fail:0", tuple()
 
     ok = warn = detected = fail = 0
     results: List[Tuple[int, int, int, str, str, CurlResult]] = []
+    ok_providers: set[str] = set()
 
     max_workers = max(1, min(8, total_tasks))
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -485,6 +613,7 @@ def run_test_suite(
     for _, attempt, repeats, test_id, provider, result in results:
         if result.status.upper() == "OK":
             ok += 1
+            ok_providers.add(provider)
         elif result.status.upper() == "WARN":
             warn += 1
         elif result.status.upper() == "DETECTED":
@@ -499,7 +628,7 @@ def run_test_suite(
         )
 
     summary = f"OK:{ok}, Warn:{warn}, Detected:{detected}, Fail:{fail}"
-    return ok, summary
+    return ok, summary, tuple(sorted(ok_providers))
 
 def start_winws(executable: Path, strategy: Strategy) -> subprocess.Popen:
     """Start winws.exe with the provided strategy."""
@@ -595,7 +724,7 @@ def check_network(curl_path: Path, curl_extra_args: List[str]) -> None:
         curl_extra_args.append("--insecure")
 
 
-def summarise_results(results: List[Tuple[int, Strategy, str]], total_checks: int) -> None:
+def summarise_results(results: List[StrategyOutcome], total_checks: int) -> None:
     """Print a grouped summary mirroring the batch script output."""
 
     if not results:
@@ -604,9 +733,9 @@ def summarise_results(results: List[Tuple[int, Strategy, str]], total_checks: in
     print("\nСводка по количеству успешных тестов:")
     for successes in range(total_checks + 1):
         matching = [
-            f"{item[1].text} ({item[2]})"
+            f"{item.strategy.text} ({item.summary})"
             for item in results
-            if item[0] == successes
+            if item.successes == successes
         ]
         if matching:
             joined = " ".join(matching)
@@ -614,92 +743,142 @@ def summarise_results(results: List[Tuple[int, Strategy, str]], total_checks: in
 
 
 def main() -> int:
-    print("==============================")
-    print("GoodCheck Python")
-    print("==============================")
-
     root = Path(__file__).resolve().parent
 
-    winws_path = prompt_path("Введите путь до winws.exe: ")
-    strategy_path = prompt_path("Введите путь до файла стратегий (.txt): ")
-
     try:
-        strategies, strategy_curl_extra = load_strategies(strategy_path)
-    except Exception as exc:  # pragma: no cover - interactive error path
-        print(f"Ошибка при чтении стратегий: {exc}")
+        log_path, restore_logging = setup_file_logging(root)
+    except OSError as exc:  # pragma: no cover - log path error is rare
+        print(f"Не удалось создать лог-файл: {exc}")
         return 1
 
     try:
-        curl_path = find_curl_executable(root)
-    except FileNotFoundError as exc:
-        print(exc)
-        return 1
+        print("==============================")
+        print("GoodCheck Python")
+        print("==============================")
 
-    curl_extra_args = strategy_curl_extra.copy()
-    timeout_sec = max(1, (TCP_TIMEOUT_MS + 999) // 1000)
+        print(f"Лог-файл: {log_path.name}")
 
-    check_network(curl_path, curl_extra_args)
-
-    passes = prompt_passes()
-    total_checks = sum(max(item[3], 1) for item in TEST_CASES)
-
-    print(f"Загружено стратегий: {len(strategies)}")
-    print(f"Будет выполнено {total_checks} HTTP-проверок на каждый прогон.")
-
-    results: List[Tuple[int, Strategy, str]] = []
-    most_successful = -1
-
-    for strategy in strategies:
-        print("\n----------------------------------------")
-        print(
-            f"Стратегия {strategy.index}/{len(strategies)}: {strategy.text}"
-        )
-        process: subprocess.Popen | None = None
-        try:
-            process = start_winws(winws_path, strategy)
-            time.sleep(1)
-        except Exception as exc:
-            print(f"Не удалось запустить winws.exe: {exc}")
-            terminate_winws(process, winws_path)
-            continue
-
-        best_score = -1
-        best_summary = "Нет данных"
+        winws_path = prompt_path("Введите путь до winws.exe: ")
+        strategy_path = prompt_path("Введите путь до файла стратегий (.txt): ")
 
         try:
-            for current_pass in range(1, passes + 1):
-                print(f"\nПрогон {current_pass} из {passes}")
-                pass_score, summary = run_test_suite(
-                    curl_path=curl_path,
-                    curl_extra_args=curl_extra_args,
-                    timeout_sec=timeout_sec,
+            strategies, strategy_curl_extra = load_strategies(strategy_path)
+        except Exception as exc:  # pragma: no cover - interactive error path
+            print(f"Ошибка при чтении стратегий: {exc}")
+            return 1
+
+        try:
+            curl_path = find_curl_executable(root)
+        except FileNotFoundError as exc:
+            print(exc)
+            return 1
+
+        curl_extra_args = strategy_curl_extra.copy()
+        timeout_sec = max(1, (TCP_TIMEOUT_MS + 999) // 1000)
+
+        check_network(curl_path, curl_extra_args)
+
+        passes = prompt_passes()
+        total_checks = sum(max(item[3], 1) for item in TEST_CASES)
+
+        print(f"Загружено стратегий: {len(strategies)}")
+        print(f"Будет выполнено {total_checks} HTTP-проверок на каждый прогон.")
+
+        results: List[StrategyOutcome] = []
+        max_provider_count = -1
+
+        for strategy in strategies:
+            print("\n----------------------------------------")
+            print(
+                f"Стратегия {strategy.index}/{len(strategies)}: {strategy.text}"
+            )
+            process: subprocess.Popen | None = None
+            try:
+                process = start_winws(winws_path, strategy)
+                time.sleep(1)
+            except Exception as exc:
+                print(f"Не удалось запустить winws.exe: {exc}")
+                terminate_winws(process, winws_path)
+                continue
+
+            best_ok = -1
+            best_summary = "Нет данных"
+            best_providers: Tuple[str, ...] = tuple()
+            best_provider_count = -1
+
+            try:
+                for current_pass in range(1, passes + 1):
+                    print(f"\nПрогон {current_pass} из {passes}")
+                    pass_ok, summary, providers = run_test_suite(
+                        curl_path=curl_path,
+                        curl_extra_args=curl_extra_args,
+                        timeout_sec=timeout_sec,
+                    )
+                    providers_line = ", ".join(providers)
+                    if providers_line:
+                        providers_text = providers_line
+                    else:
+                        providers_text = ""
+                    print(
+                        f"Результат прогона: {pass_ok}/{total_checks} ({summary}), "
+                        f"провайдеры: ({providers_text})"
+                    )
+                    provider_count = len(providers)
+                    if (
+                        provider_count > best_provider_count
+                        or (
+                            provider_count == best_provider_count
+                            and pass_ok > best_ok
+                        )
+                    ):
+                        best_ok = pass_ok
+                        best_summary = summary
+                        best_providers = providers
+                        best_provider_count = provider_count
+            finally:
+                terminate_winws(process, winws_path)
+
+            if best_provider_count >= 0:
+                outcome = StrategyOutcome(
+                    successes=best_ok,
+                    strategy=strategy,
+                    summary=best_summary,
+                    providers=best_providers,
                 )
+                results.append(outcome)
+                if best_provider_count > max_provider_count:
+                    max_provider_count = best_provider_count
+
+        summarise_results(results, total_checks)
+
+        if max_provider_count >= 0:
+            print("\nЛучшие стратегии (по числу рабочих провайдеров):")
+            for outcome in results:
+                if outcome.provider_count == max_provider_count:
+                    providers_line = ", ".join(outcome.providers)
+                    print(
+                        f"* {outcome.strategy.text} - {outcome.provider_count} провайдеров "
+                        f"({providers_line}) -> {outcome.summary}"
+                    )
+
+        if results:
+            print("\nРейтинг стратегий по рабочим провайдерам (от худших к лучшим):")
+            sorted_results = sorted(
+                results,
+                key=lambda item: (item.provider_count, item.successes),
+            )
+            for outcome in sorted_results:
+                providers_line = ", ".join(outcome.providers)
                 print(
-                    f"Результат прогона: {pass_score}/{total_checks} ({summary})"
+                    f"* {outcome.strategy.text} - {outcome.provider_count} провайдеров "
+                    f"({providers_line})"
                 )
-                if best_score < 0 or pass_score < best_score:
-                    best_score = pass_score
-                    best_summary = summary
-        finally:
-            terminate_winws(process, winws_path)
 
-        if best_score >= 0:
-            results.append((best_score, strategy, best_summary))
-            if best_score > most_successful:
-                most_successful = best_score
-
-    summarise_results(results, total_checks)
-
-    if most_successful >= 0:
-        top_strategies = [
-            item for item in results if item[0] == most_successful
-        ]
-        print("\nЛучшие стратегии (по числу успехов):")
-        for _, strategy, summary in top_strategies:
-            print(f"* {strategy.text} -> {summary}")
-
-    print("\nГотово.")
-    return 0
+        print("\nГотово.")
+        return 0
+    finally:
+        print(f"\nЛог сохранён: {log_path}")
+        restore_logging()
 
 
 if __name__ == "__main__":  # pragma: no cover - script entry point
